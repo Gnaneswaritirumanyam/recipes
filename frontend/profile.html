@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile | Recipe App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #fff7f2;
+      font-family: "Poppins", sans-serif;
+      color: #333;
+    }
+
+    .profile-container {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 2rem;
+      padding: 2rem;
+      margin: auto;
+      max-width: 1100px;
+    }
+
+    .profile-card, .activity-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .profile-card {
+      text-align: center;
+    }
+
+    #userImage {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 4px solid #ffa94d;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease;
+    }
+
+    #userImage:hover {
+      transform: scale(1.05);
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background: #ffa94d;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      margin-top: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .edit-btn:hover {
+      background: #ff922b;
+    }
+
+    .info-section {
+      text-align: left;
+      margin-top: 1.5rem;
+    }
+
+    .info-section h6 {
+      color: #ff7043;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .time-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 10px solid #ffd8a8;
+      border-top-color: #ffa94d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ff6b00;
+      font-size: 1.3rem;
+      margin: auto;
+      margin-bottom: 1rem;
+      animation: spin 10s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .activity-section button {
+      background: #ffb74d;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+
+    .favorites-section {
+      margin: 2rem auto;
+      max-width: 1100px;
+    }
+
+    .recipe-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .recipe-card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+
+    .recipe-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .recipe-card h6 {
+      padding: 10px;
+      font-size: 1rem;
+      color: #333;
+    }
+
+    #backToDashboard {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #ff5722;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 900px) {
+      .profile-container {
+        grid-template-columns: 1fr;
+      }
+      .recipe-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .recipe-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+.highlight-glow {
+  animation: glowEffect 2s ease-in-out;
+}
+
+@keyframes glowEffect {
+  0%   { box-shadow: 0 0 0px rgba(255, 165, 0, 0); }
+  25%  { box-shadow: 0 0 10px rgba(255, 165, 0, 0.5); }
+  50%  { box-shadow: 0 0 25px rgba(255, 165, 0, 0.8); }
+  75%  { box-shadow: 0 0 10px rgba(255, 165, 0, 0.5); }
+  100% { box-shadow: 0 0 0px rgba(255, 165, 0, 0); }
+}
+/* ===== Search History Modal ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-box {
+  background: #fff7f2;
+  color: #333;
+  border-radius: 15px;
+  width: 420px;
+  max-height: 75vh;
+  overflow-y: auto;
+  box-shadow: 0 0 20px rgba(255,165,0,0.5);
+  padding: 20px;
+  animation: slideUp 0.4s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #ffa500;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+
+.modal-header h5 {
+  color: #ff8c00;
+  font-weight: bold;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #ff8c00;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.close-btn:hover {
+  transform: scale(1.2);
+}
+
+.modal-body {
+  padding: 5px 0;
+}
+
+.search-item {
+  background: #fff;
+  border-left: 5px solid #ffa500;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 0 6px rgba(255,165,0,0.2);
+}
+
+.search-item small {
+  color: #666;
+  font-size: 0.85rem;
+}
+#viewSearchHistory
+{
+  cursor: pointer;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+  </style>
+</head>
+<body>
+  <button id="backToDashboard">← Back</button>
+
+  <div class="profile-container">
+    <!-- LEFT -->
+    <div class="profile-card">
+      <img id="userImage" src="/static/recipes_images/icon.png" alt="Profile">
+      <input type="file" id="uploadPic" hidden accept="image/*">
+      <br>
+      <button class="edit-btn" onclick="addProfile()">Add Profile</button>
+      <button class="edit-btn" onclick="removeProfile()">Remove Profile</button>
+
+      <div class="info-section">
+        <h6>Name</h6>
+        <p id="userName">Loading...</p>
+
+        <h6>Email</h6>
+        <p id="userEmail">Loading...</p>
+
+        <h6>Address</h6>
+        <p id="userAddress">Loading...</p>
+        <button class="edit-btn" onclick="editAddress()">Edit Address</button>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="activity-card">
+      <h5 class="text-center mb-3 text-warning fw-bold">⏱ Spent Time on App</h5>
+      <div class="time-circle" id="timeCircle">0m</div>
+
+      <div class="activity-section text-center">
+        <h5 class="mb-3 text-warning fw-bold">Your Activity</h5>
+        <button id="showActivity">View Activities</button>
+        <div id="activityList" class="mt-3" style="display: none;">
+          <ul class="list-group">
+            <li class="list-group-item"id="viewSearchHistory">🔍 Searched & Viwed</li>
+            <li class="list-group-item saved-activity">❤️ Saved & favorites</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- ===== Search History Modal ===== -->
+<div class="modal-overlay" id="searchHistoryModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h5>Search & View History</h5>
+      <button class="close-btn" id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body" id="historyContent">
+      <p style="text-align:center;">Loading...</p>
+    </div>
+  </div>
+</div>
+
+  <div class="favorites-section">
+    <h5 class="text-center mt-4 text-warning fw-bold">💖🍴 Your Favorite Recipes</h5>
+    <div class="recipe-grid" id="favoriteGrid"></div>
+  </div>
+
+<script>
+// ===== Load Profile (Unique per user) =====
+async function loadProfile() {
+  try {
+    const res = await fetch("/api/dashboard", { credentials: "include" });
+    const data = res.ok ? await res.json() : {};
+    const user = data.user || {};
+
+    if (!user.email) {
+      window.location.href = "/login";
+      return;
+    }
+
+    // Create a unique key for this user
+    const userKey = `userProfile_${user.email}`;
+
+    // Load that specific user's data
+    const localProfile = JSON.parse(localStorage.getItem(userKey)) || {};
+
+    document.getElementById("userName").innerText =
+      user.name || localProfile.name || "Guest User";
+    document.getElementById("userEmail").innerText =
+      user.email || localProfile.email || "guest@example.com";
+    document.getElementById("userAddress").innerText =
+      localProfile.address || user.address || "Add your address";
+    document.getElementById("userImage").src =
+      localProfile.profilePic || user.profilePic || "/static/recipes_images/icon.png";
+
+    // Save current user’s key globally for reuse
+    window.currentUserKey = userKey;
+  } catch (err) {
+    console.error("Failed to load profile:", err);
+  }
+}
+
+// ===== Add Profile Picture =====
+function addProfile() {
+  document.getElementById("uploadPic").click();
+}
+
+// ===== Remove Profile Picture =====
+function removeProfile() {
+  const img = document.getElementById("userImage").src;
+  const confirmBox = document.createElement("div");
+  confirmBox.innerHTML = `
+    <div class="text-center bg-white p-4 rounded">
+      <p>Are you sure you want to remove this profile picture?</p>
+      <img src="${img}" style="width:80px;height:80px;border-radius:50%;border:3px solid #ffa94d;margin-bottom:10px;">
+      <br>
+      <button id="confirmYes" class="btn btn-danger btn-sm me-2">Yes, Remove</button>
+      <button id="confirmNo" class="btn btn-secondary btn-sm">Cancel</button>
+    </div>
+  `;
+  const modal = document.createElement("div");
+  Object.assign(modal.style, {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.6)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  });
+  modal.appendChild(confirmBox);
+  document.body.appendChild(modal);
+
+  document.getElementById("confirmYes").onclick = () => {
+    const key = window.currentUserKey;
+    const profile = JSON.parse(localStorage.getItem(key)) || {};
+    delete profile.profilePic;
+    localStorage.setItem(key, JSON.stringify(profile));
+    document.getElementById("userImage").src = "/static/recipes_images/icon.png";
+    modal.remove();
+    alert("Profile picture removed successfully!");
+  };
+
+  document.getElementById("confirmNo").onclick = () => modal.remove();
+}
+
+// ===== Edit Address =====
+function editAddress() {
+  const current = document.getElementById("userAddress").innerText;
+  const newAddr = prompt("Enter your new address:", current);
+  if (newAddr) {
+    const key = window.currentUserKey;
+    const profile = JSON.parse(localStorage.getItem(key)) || {};
+    profile.address = newAddr;
+    localStorage.setItem(key, JSON.stringify(profile));
+    document.getElementById("userAddress").innerText = newAddr;
+  }
+}
+
+// ===== Upload Image (Preview + Save) =====
+document.getElementById("uploadPic").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file && window.currentUserKey) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const profile = JSON.parse(localStorage.getItem(window.currentUserKey)) || {};
+      profile.profilePic = reader.result;
+      localStorage.setItem(window.currentUserKey, JSON.stringify(profile));
+      document.getElementById("userImage").src = reader.result;
+      alert("Profile picture added successfully!");
+    };
+    reader.readAsDataURL(file);
+  }
+});
+// ===== Helper for safe JSON parsing =====
+async function safeJson(res) {
+  try {
+    return await res.json();
+  } catch {
+    return { message: "Unexpected response" };
+  }
+}
+
+// ===== Load Favorites (From Backend, per user) =====
+async function loadFavorites() {
+  const grid = document.getElementById("favoriteGrid");
+  grid.innerHTML = `<p class="text-muted text-center">Loading favorites...</p>`;
+
+  try {
+    const res = await fetch("/api/get_favorites", {
+      credentials: "include", // include access_token cookie
+    });
+
+    if (res.status === 401) {
+      grid.innerHTML = `<p class="text-muted text-center">Please log in to view your favorites ❤️</p>`;
+      return;
+    }
+
+    const data = await safeJson(res);
+    const favorites = data.favorites || [];
+
+    if (favorites.length === 0) {
+      grid.innerHTML = `<p class="text-muted text-center">No favorite recipes yet ❤️</p>`;
+      return;
+    }
+
+    grid.innerHTML = "";
+    favorites.forEach((r) => {
+      if (!r.image) return;
+      const card = document.createElement("div");
+      card.classList.add("recipe-card");
+
+      const recipeTitle = r.TranslatedRecipeName || r.name || r.title || "Recipe";
+
+      card.innerHTML = `
+        <img src="${r.image}" alt="${recipeTitle}">
+        <h6>${recipeTitle}</h6>
+      `;
+
+      // Go to recipe on image click
+      card.querySelector("img").addEventListener("click", () => {
+        const recipeName = encodeURIComponent(recipeTitle);
+        window.location.href = `/static/recipe.html?name=${recipeName}`;
+      });
+
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Error loading favorites:", err);
+    grid.innerHTML = `<p class="text-danger text-center">Error loading favorites.</p>`;
+  }
+}
+
+
+// ===== Add Favorite =====
+async function addToFavorites(title, image) {
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("image", image);
+
+  const res = await fetch("/api/add_favorite", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  const data = await safeJson(res);
+  alert(data.message || "Favorite added!");
+  loadFavorites();
+}
+
+// ===== Remove Favorite =====
+async function removeFavorite(title) {
+  const formData = new FormData();
+  formData.append("title", title);
+
+  const res = await fetch("/api/remove_favorite", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  const data = await safeJson(res);
+  alert(data.message || "Favorite removed!");
+  loadFavorites();
+}
+
+// ===== Initialize =====
+window.addEventListener("DOMContentLoaded", loadFavorites);
+
+// ===== Toggle Activity =====
+document.getElementById("showActivity").addEventListener("click", () => {
+  const list = document.getElementById("activityList");
+  list.style.display = list.style.display === "none" ? "block" : "none";
+});
+// ===== Track Time Spent per Login Session =====
+async function trackTimeSpent() {
+  const circle = document.getElementById("timeCircle");
+  if (!circle) return;
+
+  try {
+    const res = await fetch("/api/session", { credentials: "include" });
+    const data = await res.json();
+
+    // Session inactive → reset UI
+    if (!data.active) {
+      circle.textContent = "0m";
+      localStorage.removeItem("sessionStartTime");
+      localStorage.removeItem("accumulatedTime");
+      localStorage.removeItem("currentUserEmail");
+      return;
+    }
+
+    const currentUser = data.email || "guest";
+    const lastUser = localStorage.getItem("currentUserEmail");
+
+    // Different user → reset data
+    if (lastUser !== currentUser) {
+      localStorage.clear();
+      localStorage.setItem("currentUserEmail", currentUser);
+    }
+
+    let startTime = parseInt(localStorage.getItem("sessionStartTime"), 10);
+    let accumulated = parseInt(localStorage.getItem("accumulatedTime"), 10) || 0;
+
+    // If not started yet, set start time
+    if (!startTime) {
+      startTime = Date.now();
+      localStorage.setItem("sessionStartTime", startTime);
+    }
+
+    function updateTime() {
+      const now = Date.now();
+      const sessionMinutes = Math.floor((now - startTime) / 60000);
+      const totalMinutes = accumulated + sessionMinutes;
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      circle.textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+    }
+
+    updateTime();
+
+    const interval = setInterval(async () => {
+      const check = await fetch("/api/session", { credentials: "include" });
+      const session = await check.json();
+
+      if (!session.active) {
+        // Calculate total spent time before logout
+        const now = Date.now();
+        const total = accumulated + Math.floor((now - startTime) / 60000);
+        localStorage.setItem("accumulatedTime", total);
+        localStorage.removeItem("sessionStartTime");
+        circle.textContent = `${total}m`;
+        clearInterval(interval);
+      } else {
+        updateTime();
+      }
+    }, 60000);
+  } catch (err) {
+    console.error("Error tracking time:", err);
+  }
+}
+
+// ===== Logout =====
+async function logoutUser() {
+  try {
+    // 1️⃣ Calculate accurate total time before logout
+    const startTime = parseInt(localStorage.getItem("sessionStartTime"), 10);
+    const accumulated = parseInt(localStorage.getItem("accumulatedTime"), 10) || 0;
+
+    if (startTime) {
+      const total = accumulated + Math.floor((Date.now() - startTime) / 60000);
+      localStorage.setItem("accumulatedTime", total);
+      localStorage.removeItem("sessionStartTime");
+    }
+
+    // 2️⃣ Invalidate session on backend
+    await fetch("/logout", { method: "POST", credentials: "include" });
+
+    // 3️⃣ Reset UI
+    document.getElementById("timeCircle").textContent = "0m";
+
+    // 4️⃣ Optionally clear user-specific key if you used one
+    if (window.currentUserKey) {
+      localStorage.removeItem(`sessionStartTime_${window.currentUserKey}`);
+    }
+
+    // 5️⃣ Redirect to login
+    window.location.href = "/login";
+  } catch (err) {
+    console.error("Logout failed:", err);
+    alert("Logout failed. Please try again.");
+  }
+}
+
+// ===== Helper =====
+function capitalizeWords(str) {
+  return str.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ===== Back Button =====
+document.getElementById("backToDashboard").addEventListener("click", () => {
+  window.location.href = "/dashboard";
+});
+
+// ===== Init =====
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadProfile();
+  loadFavorites();
+  trackTimeSpent();
+});
+// ===== Smooth Scroll & Glow to Favorites Section =====
+document.addEventListener("DOMContentLoaded", () => {
+  const savedActivity = document.querySelector(".saved-activity");
+  const favoritesSection = document.getElementById("favoriteGrid");
+
+  if (savedActivity && favoritesSection) {
+    savedActivity.style.cursor = "pointer";
+    savedActivity.addEventListener("click", () => {
+      // Smooth scroll to the favorites grid
+      const yOffset = -80; // optional offset for fixed headers
+      const y = favoritesSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+      window.scrollTo({
+        top: y,
+        behavior: "smooth"
+      });
+
+      // Wait a bit for scroll, then glow
+      setTimeout(() => {
+        favoritesSection.classList.add("highlight-glow");
+        setTimeout(() => {
+          favoritesSection.classList.remove("highlight-glow");
+        }, 2000);
+      }, 700);
+    });
+  }
+});
+
+// === Elements ===
+const modal = document.getElementById("searchHistoryModal");
+const viewBtn = document.getElementById("viewSearchHistory");
+const closeBtn = document.getElementById("closeModal");
+const historyContent = document.getElementById("historyContent");
+
+// === Open Modal and Load Data ===
+viewBtn.addEventListener("click", async () => {
+  modal.style.display = "flex";
+  historyContent.innerHTML = "<p style='text-align:center;'>Loading...</p>";
+
+  try {
+    const res = await fetch("/get_history");
+    const data = await res.json();
+
+    let html = "";
+
+    if ((!data.searched || !data.searched.length) && (!data.viewed || !data.viewed.length)) {
+      html = `<p style="text-align:center;">No history available yet.</p>`;
+    } else {
+      if (data.searched && data.searched.length > 0) {
+        html += `<h6 style="color:#ff8c00;">🔍 Search History</h6>`;
+        data.searched.forEach(s => {
+          html += `
+            <div class="search-item">
+              <b>${s.ingredients.join(", ")}</b><br>
+              <small>${s.timestamp}</small>
+            </div>`;
+        });
+      }
+      if (data.viewed && data.viewed.length > 0) {
+        html += `<h6 style="color:#ff8c00; margin-top:15px;">👀 Viewed Recipes</h6>`;
+        data.viewed.forEach(v => {
+          html += `
+            <div class="search-item">
+              <b>${v.recipe_name}</b><br>
+              <small>${v.timestamp}</small>
+            </div>`;
+        });
+      }
+    }
+
+    historyContent.innerHTML = html;
+  } catch (err) {
+    console.error("Failed to load history:", err);
+    historyContent.innerHTML = `<p style="text-align:center; color:red;">Error loading history.</p>`;
+  }
+});
+
+// === Close Modal ===
+closeBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+// === Close on Outside Click ===
+window.addEventListener("click", (e) => {
+  if (e.target === modal) {
+    modal.style.display = "none";
+  }
+});
+
+</script>
+</body>
+</html>

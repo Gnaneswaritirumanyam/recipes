@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe</title>
+<style>
+@page { size: A4; margin: 20mm; }
+body { font-family: "Georgia", "Times New Roman", serif; margin:0; padding:0; background:#fdfdfc; color:#111; }
+.container { width: 100%; max-width: 900px; margin:auto; padding:20px; background:#fff; box-shadow:0 0 10px rgba(0,0,0,0.1); border-radius:8px; }
+
+.title { text-align:center; font-size:2rem; letter-spacing:1px; margin-bottom:15px; color:#ff5722; text-transform:capitalize; }
+
+.icon-row {
+  display:flex; justify-content:space-around; align-items:center;
+  border-top:1px solid #ccc; border-bottom:1px solid #ccc;
+  padding:10px 0; margin-bottom:15px; flex-wrap:wrap; gap:10px;
+}
+
+.icon-box, .info-box { text-align:center; min-width:100px; }
+.icon { display:block; font-size:1.5rem; margin-bottom:5px; }
+
+.info-row {
+  display:flex; justify-content:space-around; align-items:center;
+  padding:8px 0; margin-bottom:15px;
+  flex-wrap:wrap; gap:10px;
+  /* removed borders */
+}
+
+.content { display:grid; grid-template-columns:1.2fr 1fr; gap:20px; margin-bottom:20px; }
+
+.ingredients h2, .preparation h2 {
+  font-size:1.3rem;
+  margin-bottom:10px;
+  border-bottom:1px solid #ccc;
+  padding-bottom:5px;
+  color:#444;
+}
+
+.ingredients ul { list-style:none; padding-left:0; line-height:1.6; margin:0; }
+.ingredients li::before { content:"• "; color:#444; }
+
+.preparation { margin-top:10px; }
+
+.preparation img {
+  width:100%;
+  max-height:300px;
+  object-fit:cover;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+/* Compact, two-column preparation steps */
+.steps-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px 20px;
+}
+
+.step {
+  background:#fff9f5;
+  border:1px solid #f2d2c7;
+  border-radius:6px;
+  padding:8px 10px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.05);
+  font-size:0.95rem;
+  line-height:1.4;
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+}
+
+.step-number {
+  background:#ff5722;
+  color:#fff;
+  font-weight:bold;
+  border-radius:50%;
+  width:24px;
+  height:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:0.9rem;
+  flex-shrink:0;
+}
+
+@media(max-width:900px) {
+  .content { grid-template-columns:1fr; }
+  .steps-grid { grid-template-columns:1fr; }
+}
+@media(max-width:600px) {
+  .title{font-size:1.6rem;}
+  .icon{font-size:1.3rem;}
+}
+
+/* --- SAVE BUTTON STYLE --- */
+.save-btn {
+  display: block;
+  margin: 0 auto 15px auto;
+  background-color: #ff5722;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+.save-btn:hover {
+  background-color: #e64a19;
+  transform: scale(1.05);
+}
+.save-btn.saved {
+  background-color: #4caf50;
+}
+
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="title" id="recipe-title">Recipe Title</h1>
+  <button id="save-btn" class="save-btn">❤️ Save Recipe</button>
+  <!-- Prep/Cook/Servings -->
+  <div class="icon-row">
+    <div class="icon-box">
+      <span class="icon">⏰</span>
+      <p>Prep time:<br><strong id="prep-time"></strong></p>
+    </div>
+    <div class="icon-box">
+      <span class="icon">🔥</span>
+      <p>Cook time:<br><strong id="cook-time"></strong></p>
+    </div>
+    <div class="icon-box">
+      <span class="icon">🍴</span>
+      <p>Servings:<br><strong id="servings"></strong></p>
+    </div>
+  </div>
+
+
+  <!-- Course/Cuisine/Diet -->
+  <div class="info-row">
+    <div class="info-box">🍽️ <strong>Course:</strong> <span id="course"></span></div>
+    <div class="info-box">🌍 <strong>Cuisine:</strong> <span id="cuisine"></span></div>
+    <div class="info-box">🥗 <strong>Diet:</strong> <span id="diet"></span></div>
+  </div>
+
+  <!-- Ingredients + Image -->
+  <div class="content">
+    <div class="ingredients">
+      <h2>Ingredients</h2>
+      <ul id="ingredients-list"></ul>
+    </div>
+    <div class="preparation">
+      <img src="" alt="Recipe Image" id="recipe-img">
+    </div>
+  </div>
+
+  <!-- Preparation Steps in Compact Two Columns -->
+  <div class="preparation">
+    <h2>Preparation</h2>
+    <div class="steps-grid" id="prep-steps"></div>
+  </div>
+</div>
+
+<script>
+  // ===== Get query param =====
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  const recipeName = decodeURIComponent(getQueryParam('name') || "");
+
+  // ===== Convert string to Title Case =====
+  function toTitleCase(str) {
+    if (!str) return "";
+    return str.replace(/\w\S*/g, txt =>
+      txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    );
+  }
+
+  // ===== Load Recipe =====
+  async function loadRecipe() {
+    try {
+      const res = await fetch(`/get_recipe?name=${encodeURIComponent(recipeName)}`);
+      if (!res.ok) throw new Error("Recipe not found");
+      const recipe = await res.json();
+
+      // Fill recipe details
+      document.getElementById("recipe-title").innerText = toTitleCase(recipe.TranslatedRecipeName);
+      document.getElementById("recipe-img").src = recipe.image;
+      document.getElementById("course").innerText = recipe.Course || "-";
+      document.getElementById("cuisine").innerText = recipe.Cuisine || "-";
+      document.getElementById("diet").innerText = recipe.Diet || "-";
+      document.getElementById("prep-time").innerText = recipe.PrepTimeInMins + " min";
+      document.getElementById("cook-time").innerText = recipe.CookTimeInMins + " min";
+      document.getElementById("servings").innerText = recipe.Servings || "-";
+
+      // Ingredients list
+      const ingList = document.getElementById("ingredients-list");
+      ingList.innerHTML = "";
+      recipe.TranslatedIngredients.forEach(ing => {
+        const li = document.createElement("li");
+        li.textContent = ing;
+        ingList.appendChild(li);
+      });
+
+      // Preparation steps
+      const prepDiv = document.getElementById("prep-steps");
+      prepDiv.innerHTML = "";
+      recipe.TranslatedInstructions.forEach((step, index) => {
+        const div = document.createElement("div");
+        div.className = "step";
+
+        const num = document.createElement("div");
+        num.className = "step-number";
+        num.textContent = index + 1;
+
+        const text = document.createElement("div");
+        let formatted = step.trim();
+        if (!formatted.endsWith(".")) formatted += ".";
+        text.textContent = formatted;
+
+        div.appendChild(num);
+        div.appendChild(text);
+        prepDiv.appendChild(div);
+      });
+    } catch (err) {
+      console.error("Error loading recipe:", err);
+      document.getElementById("recipe-title").innerText = "Recipe Not Found";
+    }
+  }
+
+  // ===== Run automatically if recipe name exists =====
+  if (recipeName) loadRecipe();
+
+// ===============================
+// ❤️ SAVE / UNSAVE LOGIC (with backend sync)
+// ===============================
+const recipeTitleEl = document.getElementById("recipe-title");
+const recipeImgEl = document.getElementById("recipe-img");
+const saveBtn = document.getElementById("save-btn");
+let userEmail = null;
+
+// === Get logged-in user ===
+async function fetchUser() {
+  try {
+    const res = await fetch("/api/profile", { credentials: "include" });
+    if (!res.ok) throw new Error("No session");
+    const data = await res.json();
+    userEmail = data.email || null;
+    console.log("Logged in as:", userEmail);
+  } catch (err) {
+    console.warn("User not logged in:", err);
+    userEmail = null;
+  }
+}
+
+// === Update Save Button Status from Backend ===
+async function updateSaveButton() {
+  try {
+    const res = await fetch("/api/get_favorites", { credentials: "include" });
+    if (!res.ok) throw new Error("Not logged in or no favorites");
+    const data = await res.json();
+    const favorites = data.favorites || [];
+
+    const title = recipeTitleEl.innerText.trim();
+    const isSaved = favorites.some(r => r.title === title);
+
+    if (isSaved) {
+      saveBtn.textContent = "✅ Saved!";
+      saveBtn.classList.add("saved");
+    } else {
+      saveBtn.textContent = "❤️ Save Recipe";
+      saveBtn.classList.remove("saved");
+    }
+  } catch (err) {
+    console.warn("No user session or error fetching favorites:", err);
+    saveBtn.textContent = "❤️ Save Recipe";
+  }
+}
+
+// === Handle Save / Unsave Click ===
+saveBtn.addEventListener("click", async () => {
+  if (!userEmail) {
+    saveBtn.textContent = "🔒 Login required";
+    saveBtn.disabled = true;
+    setTimeout(() => {
+      saveBtn.textContent = "❤️ Save Recipe";
+      saveBtn.disabled = false;
+    }, 2000);
+    return;
+  }
+
+  const recipe = {
+    title: recipeTitleEl.innerText.trim(),
+    image: recipeImgEl.src
+  };
+
+  let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+  const index = favorites.findIndex(r => r.title === recipe.title);
+
+  if (index === -1) {
+    // --- SAVE RECIPE ---
+    favorites.push(recipe);
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+    saveBtn.textContent = "✅ Saved!";
+    saveBtn.classList.add("saved");
+
+    try {
+      const formData = new FormData();
+      formData.append("title", recipe.title);
+      formData.append("image", recipe.image);
+
+      const res = await fetch("/api/add_favorite", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Backend save failed");
+    } catch (err) {
+      console.error("Error saving to backend:", err);
+    }
+
+  } else {
+    // --- UNSAVE RECIPE ---
+    favorites.splice(index, 1);
+    localStorage.setItem("favorites", JSON.stringify(favorites));
+    saveBtn.textContent = "❤️ Save Recipe";
+    saveBtn.classList.remove("saved");
+
+    try {
+      const formData = new FormData();
+      formData.append("title", recipe.title);
+
+      const res = await fetch("/api/remove_favorite", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Backend remove failed");
+    } catch (err) {
+      console.error("Error removing from backend:", err);
+    }
+  }
+});
+
+// === Initialize on page load ===
+window.addEventListener("load", async () => {
+  await fetchUser();
+  await updateSaveButton();
+});
+
+</script>
+</body>
+</html>

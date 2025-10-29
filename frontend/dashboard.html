@@ -1,0 +1,1235 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+/* GREETING */
+.greeting-container { display:flex; justify-content:center; align-items:center; }
+.greeting-text { color: orangered; font-size:35px; font-weight:bold; }
+.greeting-text:hover{ color:whitesmoke; }
+.search-bar {
+  width: 100%;
+  max-width: 900px;
+  margin: 20px auto;
+  height: 120px;
+  background-image: url('/static/images/search.jpg');
+  background-size: cover;
+  background-position: center;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* === Elegant Glass Overlay === */
+.search-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(255, 165, 0, 0.15),  /* warm orange tint */
+    rgba(255, 255, 255, 0.15) /* blends to soft white */
+  );
+  backdrop-filter: blur(2px);           /* gentle glass blur */
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 0;
+  border-radius: 10px;
+}
+
+/* Keep inputs and text sharp */
+.search-bar * {
+  position: relative;
+  z-index: 1;
+}
+
+.search-bar input {
+  width:60%;
+  max-width:600px;
+  padding:12px 20px;
+  border-radius:25px;
+  border:none;
+  font-size:16px;
+  outline:none;
+}
+.search-bar button {
+  margin-left:10px;
+  background-color:#ff5722;
+  color:white;
+  border:none;
+  border-radius:25px;
+  padding:12px 20px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+
+/* SUGGESTIONS */
+.suggestions {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:20px;
+}
+.suggestion-box {
+  background-color:#fff3e0;
+  padding:10px 15px;
+  border-radius:10px;
+  font-weight:bold;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0px 2px 5px rgba(0,0,0,0.1);
+  white-space:nowrap;
+  transition:0.2s;
+}
+.suggestion-box:hover { background-color:#ffd180; }
+
+
+
+/* RECIPE GRID */
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  padding: 25px;
+  max-width: 1300px;
+  margin: auto;
+  justify-items: center; /* ensures cards are centered within grid cells */
+}
+
+
+.recipe-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+
+
+/* RECIPE CARD */
+.recipe-card {
+  background-color: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  width: 360px;
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start; /* align top */
+  padding: 0; /* remove internal space */
+}
+
+/* RECIPE IMAGE */
+.recipe-card img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+  margin: 0; /* remove any default spacing */
+  padding: 0;
+  border-bottom: none; /* ensure no border effect */
+}
+
+/* RECIPE TITLE */
+.recipe-card h5 {
+  padding: 12px;
+  text-align: center;
+  font-size: 18px;
+  background-color: #ff5722;
+  color: #fff;
+  border-radius: 0 0 15px 15px;
+  margin: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+@media (max-width: 992px) {
+  .recipe-grid { grid-template-columns: repeat(2, 1fr); }
+  .recipe-card { width: 300px; height: 280px; }
+  .recipe-card img { height: 240px; }
+}
+
+@media (max-width: 600px) {
+  .recipe-grid { grid-template-columns: 1fr; }
+  .recipe-card { width: 90%; height: 280px; }
+  .recipe-card img { height: 220px; }
+}
+
+
+/* Live Suggestions Dropdown */
+.suggestions-box {
+  position: absolute;
+  width: 60%;
+  max-width: 600px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  margin-top: 5px;
+  overflow: hidden;
+  z-index: 9999;
+  display: none;
+}
+
+.suggestions-box div {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestions-box div:hover {
+  background: #ffe0b2;
+}
+
+
+#live-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  max-width: 600px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  max-height: 250px;
+  overflow-y: auto;
+  display: none;
+  z-index: 1000;
+}
+#live-suggestions div {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  font-weight: 500;
+}
+#live-suggestions div:hover {
+  background-color: #ffd180;
+}
+
+
+/* ===== Mobile Responsiveness ===== */
+@media (max-width: 992px) {
+    #live-suggestions {
+        width: 90%; /* take most of the mobile width */
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+@media (max-width: 576px) {
+    #live-suggestions {
+        width: 95%; /* almost full width on very small devices */
+    }
+}
+
+/* ===== FIXED Suggestions Carousel ===== */
+.suggestions-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin: 20px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow:hidden;
+}
+
+.suggestions-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 50px; /* leave space for buttons */
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+.suggestions-scroll::-webkit-scrollbar { display: none; }
+.suggestions-scroll { scrollbar-width: none; }
+
+
+.suggestions-box {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: #ffebee;
+}
+
+/* Circular arrow buttons */
+.scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff5722;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  opacity: 0.9;
+}
+
+/* Always visible on desktop, hide only when not needed via JS */
+#scrollLeft { left: 5px; }
+#scrollRight { right: 5px; }
+
+@media (max-width: 768px) {
+  .scroll-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 18px;
+  }
+}
+
+
+
+/* ===== Glowing White Headings ===== */
+.glowing-text {
+  color: #fff;
+  text-shadow: 0 0 10px #ffffffb3, 0 0 20px #ffffff80;
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 10px #ffffff80; }
+  to { text-shadow: 0 0 20px #fff, 0 0 30px #f8f9fa; }
+}
+
+/* ===== Section Layout Adjustments ===== */
+.about-content {
+  position: relative;
+  z-index: 2;
+  padding-left: 80px;
+  padding-right: 80px;
+}
+
+/* ===== Chef Side Images (moved to top corners) ===== */
+.chef-image {
+  position: absolute;
+  top: 30; /* fixed unit */
+  width: 200px;
+  height: auto;
+  opacity: 0.25;
+  z-index: 1;
+  filter: brightness(1.6);
+  animation: float 6s ease-in-out infinite;
+}
+
+.chef-image.left {
+  left: 0;
+}
+
+.chef-image.right {
+  right: 0;
+}
+
+/* ===== Smooth Floating Animation ===== */
+@keyframes float {
+  0% { transform: translateY(-20px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(-20px); }
+}
+/* --- Tablets (≤992px) --- */
+@media (max-width: 992px) {
+  .about-content {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .chef-image {
+    width: 160px;
+    opacity: 0.3;
+  }
+}
+
+/* --- Mobile (≤768px) --- */
+@media (max-width: 768px) {
+  .about-content {
+    padding: 0 20px;
+    text-align: center;
+  }
+
+  .about-content .row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .chef-image {
+    width: 120px;
+    opacity: 0.25;
+    top: 10px;
+  }
+
+  .chef-image.left {
+    left: -10px;
+  }
+
+  .chef-image.right {
+    right: -10px;
+  }
+}
+
+/* --- Extra small screens (≤480px) --- */
+@media (max-width: 480px) {
+  .about-content {
+    padding: 0 15px;
+  }
+
+  .chef-image {
+    display: none; /* Hide on tiny screens */
+  }
+}
+
+
+
+/* ===== Fade-in Animation on Scroll ===== */
+.fade-in-on-scroll {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s ease-in-out;
+}
+.fade-in-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+/* ===== Navbar: Simple Transparent ===== */
+
+.navbar {
+  position: relative; /* instead of fixed */
+  top: 0;
+  width: 100%;
+  background: transparent !important;
+  padding: 15px 0;
+  z-index: 1050;
+}
+
+/* Navbar Links */
+.navbar-brand {
+  color: white !important;
+  font-family: 'Poppins', sans-serif;
+}
+.navbar-nav .nav-link {
+  color: #080808 !important;
+  font-size: 18px;
+  transition: 0.3s;
+}
+.navbar-nav .nav-link:hover {
+  color: orangered !important;
+}
+
+/* Logout button */
+#logoutBtn {
+  border-color: #fff;
+  color: #fff;
+}
+#logoutBtn:hover {
+  background-color: rgb(9, 9, 9);
+  color: black;
+}
+
+/* Mobile menu background */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    background-color: rgba(0,0,0,0.9);
+    padding: 15px;
+  }
+}
+
+
+/* Mobile Scrolling Nav */
+.mobile-nav {
+  overflow-x: auto;
+  white-space: nowrap;
+  color: #080808;
+}
+
+.mobile-nav .scrolling-nav a {
+  display: inline-block;
+  padding: 8px 12px;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.mobile-nav .scrolling-nav a:hover {
+  border-color: #ff5722;
+}
+
+/* Hide desktop nav on small screens */
+@media (max-width: 992px) {
+  .navbar .collapse {
+    display: none !important;
+  }
+}
+/* mobile scroll wrapper */
+.mobile-nav-wrapper {
+  display: block;
+  padding: 6px 8px;              /* ensures first/last items aren't clipped */
+  margin-top: 6px;
+  overflow: visible;
+  align-items: center;
+}
+
+/* Scrolling nav: touch-friendly + snap */
+.scrolling-nav {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 40px; /* extra padding so first/last don't get clipped under the buttons */
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+/* each link snaps to start */
+.scrolling-nav .mobile-link {
+  display: inline-block;
+  padding: 8px 14px;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  border-radius: 8px;
+  transition: background .18s, transform .12s;
+}
+
+/* visible style + easier tap target */
+.scrolling-nav .mobile-link:hover,
+.scrolling-nav .mobile-link:focus {
+  background: rgba(255,87,34,0.12);
+  transform: translateY(-2px);
+}
+
+/* make sure the scroll container is not clipped on very small screens */
+@media (max-width: 420px) {
+  .mobile-scroll-btn { width: 32px; height: 32px; font-size:18px; }
+  .scrolling-nav { padding-left: 36px; padding-right: 36px; gap:10px; }
+}
+
+.logo-img {
+  height: 70px;
+  width: auto;
+  margin-right: 6px;
+  position: relative;
+  top: 0px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+.logo-text {
+  position: relative;
+  top: 10px;  /* adjust this to move text down */
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff5722;
+}
+
+/* Responsive tweak */
+@media (max-width: 768px) {
+  .logo-img {
+    height: 60px;
+    top: 0px;
+  }
+  .logo-text {
+    top: 10px;
+  }
+}
+
+#bg-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 120vh;
+  object-fit: cover;
+  z-index: -1;
+  transform: translateY(-10%);
+  background-attachment: fixed;
+}
+
+</style>
+</head>
+<body>
+<!-- Background Image -->
+<img src="\static\images\home1.jpg" alt="background" id="bg-image">
+<!-- 🔸 Modern Top Navbar -->
+<nav class="navbar navbar-expand-lg py-2">
+  <div class="container-fluid px-4">
+
+    <!-- Centered Brand -->
+<a class="navbar-brand mx-auto d-flex align-items-center text-orange fw-bold fs-3" href="#">
+  <img src="static/images/logo4.png" alt="CookingHub Logo" class="me-2 logo-img">
+  <span class="logo-text">CookingHub</span>
+</a>
+
+
+    <!-- Right side Logout Button -->
+    <div class="d-lg-none position-absolute end-0 me-3">
+      <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav align-items-center gap-lg-3">
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/dashboard">Home</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/cuisine">Cuisine</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/reviews">Reviews</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/profile">Profile</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="#about-section">About</a></li>
+        <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
+
+    </div>
+      </ul>
+     <!-- 📱 Mobile Scrollable Links (replace existing mobile-nav) -->
+<div class="d-lg-none w-100 mt-2 mobile-nav-wrapper position-relative">
+
+
+  <div class="mobile-nav mt-2 text-center">
+    <div class="scrolling-nav d-flex gap-3 px-3" id="mobileScrollingNav">
+      <a href="/dashboard" class="mobile-link text-black fw-semibold text-decoration-none">Home</a>
+      <a href="/cuisine" class="mobile-link text-black fw-semibold text-decoration-none">Cuisine</a>
+      <a href="/reviews" class="mobile-link text-black fw-semibold text-decoration-none">Reviews</a>
+      <a href="/profile" class="mobile-link text-black fw-semibold text-decoration-none">Profile</a>
+      <a href="#about-section" class="mobile-link text-black fw-semibold text-decoration-none">About</a>
+       <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+</nav>
+
+<div class="main-content" id="mainContent">
+  <div class="greeting-container"><h2 id="greeting" class="greeting-text"></h2></div>
+  <div class="search-bar" style="position: relative;">
+  <input type="text" id="ingredient-input" placeholder="Enter ingredients (e.g. rice, chicken)">
+  <button id="search-btn">Search</button>
+  <div id="live-suggestions" class="suggestions-box"></div>
+</div>
+</div>
+
+  <div class="suggestions-wrapper">
+  <button id="scrollLeft" class="scroll-btn" aria-label="Scroll left">‹</button>
+  <div id="suggestions-scroll" class="suggestions-scroll">
+    <div class="suggestion-box">Chicken</div>
+    <div class="suggestion-box">Paneer</div>
+    <div class="suggestion-box">Fish</div>
+    <div class="suggestion-box">Dal</div>
+    <div class="suggestion-box">Rice</div>
+    <div class="suggestion-box">Eggs</div>
+    <div class="suggestion-box">Butter</div>
+    <div class="suggestion-box">Curd</div>
+    <div class="suggestion-box">Tomato</div>
+    <div class="suggestion-box">Corn</div>
+    <div class="suggestion-box">Prawn</div>
+    <div class="suggestion-box">Vegetables</div>
+     <div class="suggestion-box">moong dal</div>
+    <div class="suggestion-box">noodles</div>
+     <div class="suggestion-box">Mint(pudina)</div>
+    <div class="suggestion-box">sorral(gongura)</div>
+      <div class="suggestion-box">salads</div>
+    <div class="suggestion-box">jaggary</div>
+  </div>
+  <button id="scrollRight" class="scroll-btn" aria-label="Scroll right">›</button>
+</div>
+
+  <div class="recipe-grid" id="suggestions-container">
+
+     <div class="recipe-card" data-name="whole wheat crepe recipe with herbed vegetables">
+      <img src="/static/recipes_images/Whole_Wheat_Crepe_Recipe_With_Herbed_Vegetables.jpg" alt="Whole Wheat Crepe with Herbed Vegetables">
+      <h5>Whole Wheat Crepe with Herbed Vegetables</h5>
+  </div>
+
+ 
+  <div class="recipe-card" data-name="chinese darsaan recipe with ice cream">
+      <img src="/static/recipes_images/Chinese_Darsaan_Recipe_With_Ice_Cream.jpg" alt="Chinese Darsaan Ice Cream">
+      <h5>Chinese Darsaan IceCream</h5>
+  </div>
+   <div class="recipe-card" data-name="chettinad style chicken roast recipe">
+      <img src="/static/recipes_images/Chettinad_Style_Chicken_Roast_Recipe.jpg" alt="Chettinad Chicken Roast">
+      <h5>Chettinad Chicken Roast</h5>
+  </div>
+
+
+  <div class="recipe-card" data-name="vegan chickpea omelette recipe (spiced chickpea flour pancakes)">
+      <img src="/static/recipes_images/Vegan_Chickpea_Omelette_Recipe_Spiced_Chickpea_Flour_Pancakes.jpg" alt="chickpea omelette">
+      <h5>Vegan Chickpea Omelette</h5>
+  </div>
+  <div class="recipe-card" data-name="spicy seafood stew casserole with tomatoes and lime recipe">
+      <img src="/static/recipes_images/Spicy_Seafood_Stew_Casserole_With_Tomatoes_And_Lime_Recipe.jpg" alt="Spicy seafood">
+      <h5>Spicy Seafood Stew</h5>
+  </div>
+  <div class="recipe-card" data-name="chanar dal recipe - bengali steel paneer & potato gravy">
+      <img src="/static/recipes_images/Chanar_Dal_Recipe_Bengali_Steel_Paneer_Potato_Gravy.jpg" alt="chanar dal">
+      <h5>Chanar Dal </h5>
+  </div>
+</div>
+</div>
+
+<!-- Add this at the end of <body> -->
+<div id="sessionExpiredModal" style="
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    backdrop-filter:blur(2px);
+    z-index:9999;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-align:center;
+    color:#fff;
+">
+    <div style="
+        background:#ff5722;
+        padding:30px 50px;
+        border-radius:10px;
+        font-size:20px;
+    ">
+        <p>Your session has expired. Please login again.</p>
+        <button id="sessionExpiredLoginBtn" style="
+            margin-top:20px;
+            padding:10px 20px;
+            font-size:16px;
+            border:none;
+            border-radius:6px;
+            cursor:pointer;
+            background:#fff;
+            color:#ff5722;
+            font-weight:bold;
+        ">Login</button>
+    </div>
+</div>
+<!-- ===== ABOUT SECTION ===== -->
+<section id="about-section" class="container-fluid py-5 position-relative" style="background-color:black; overflow:hidden; color:white;">
+
+  <!-- Decorative Chef Images -->
+  <img src="static/images/boy.jpg" alt="Chef Left" class="chef-image left fade-in-on-scroll">
+  <img src="static/images/girl.jpg" alt="Chef Right" class="chef-image right fade-in-on-scroll">
+
+  <!-- About Content -->
+  <div class="container position-relative fade-in-on-scroll about-content">
+    <div class="row g-4 align-items-start">
+
+      <!-- Owner Profile -->
+      <div class="col-lg-4 text-center">
+        <img src="static/images/owner.jpg" alt="Owner" class="rounded-circle mb-3 shadow-lg"
+             style="width:150px; height:150px; object-fit:cover; border:3px solid #fff;">
+        <h4 class="fw-bold glowing-text">Gnaneswari Tirumanyam</h4>
+        <p class="mb-1"><i class="bi bi-envelope"></i> gnaneswari@example.com</p>
+        <p class="mb-1"><i class="bi bi-telephone"></i> +91 98765 43210</p>
+        <p class="mb-3"><i class="bi bi-geo-alt"></i> Hyderabad, India</p>
+
+        <div class="d-flex justify-content-center gap-4 fs-4">
+          <a class="text-white">🅾</a>
+          <a class="text-white"> ⓕ</a>
+          <a  class="text-white"> ▶️</a>
+        </div>
+      </div>
+
+      <!-- About Website -->
+      <div class="col-lg-4">
+        <h4 class="fw-bold mb-3 text-center text-lg-start glowing-text">🍴 About This Website</h4>
+        <p class="text-light">
+          Welcome to <strong>Cooking Hub</strong> — your all-in-one destination for discovering, sharing, 
+          and creating recipes that connect people through taste. From local delicacies to global cuisines, 
+          this platform celebrates the art of cooking in every form.
+        </p>
+        <p class="text-light">
+          Designed with simplicity, speed, and inspiration in mind — Cooking Hub helps you search, 
+          save, and explore recipes effortlessly. Every feature is built to make your cooking experience 
+          smarter and more joyful.
+        </p>
+      </div>
+
+      <!-- Motivation & Experience -->
+      <div class="col-lg-4">
+        <h4 class="fw-bold mb-3 text-center text-lg-start glowing-text">💡 Motivation & Experience</h4>
+        <p class="text-light">
+          Cooking has always been my creative escape — a way to combine passion, precision, and discovery. 
+          With each experiment, I learned how food tells stories and connects hearts.
+        </p>
+        <p class="text-light">
+          Through my experience in full-stack web development and UI design, I wanted to build 
+          something more than a recipe app — a culinary companion that inspires people to cook, 
+          learn, and share. Cooking Hub is that dream realized.
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-5 pt-4 border-top border-light">
+      <p class="text-secondary mb-0">
+        © 2025 <strong>Cooking Hub</strong> — Crafted with ❤️ by Gnaneswari Tirumanyam
+      </p>
+    </div>
+  </div>
+</section>
+<script>
+
+// ===== Helper: Capitalize words =====
+function capitalizeWords(str) {
+    return str.replace(/_/g, ' ')
+              .toLowerCase()
+              .replace(/\b\w/g, c => c.toUpperCase());
+}
+// ===== Logout Function =====
+document.addEventListener("DOMContentLoaded", () => {
+  const logoutButtons = document.querySelectorAll(".logout-btn");
+
+  if (logoutButtons.length === 0) {
+    console.warn("Logout button not found!");
+    return;
+  }
+
+  logoutButtons.forEach(btn => {
+    btn.addEventListener("click", async () => {
+      try {
+        await fetch("/logout", { method: "POST", credentials: "include" });
+        localStorage.removeItem("user_name");
+        window.location.href = "/static/login.html";
+      } catch (err) {
+        console.error("Logout failed:", err);
+      }
+    });
+  });
+});
+
+
+// ===== Greeting & Session Check =====
+async function loadUser() {
+    try {
+        const res = await fetch("/api/dashboard", {
+            credentials: "include" // send HTTP-only cookie
+        });
+        if (!res.ok) throw new Error("Not authenticated");
+        const data = await res.json();
+        const userName = data.user.name || "Guest";
+        document.getElementById("greeting").innerText = `Hello, ${userName}!`;
+        localStorage.setItem("user_name", userName);
+    } catch (err) {
+        console.log("Session expired or not logged in:", err);
+        window.location.href = "/static/login.html"; // redirect immediately
+    }
+}
+// Call on page load
+loadUser();
+
+// ===== Make initial cards clickable & capitalize names =====
+document.querySelectorAll('.recipe-card').forEach(card => {
+  const titleElem = card.querySelector('h5');
+  titleElem.innerText = capitalizeWords(titleElem.innerText);
+
+  card.addEventListener('click', () => {
+    const recipeName = encodeURIComponent(card.dataset.name);
+    window.location.href = `/static/recipe.html?name=${recipeName}`;
+  });
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const scrollContainer = document.getElementById("suggestions-scroll");
+  const scrollLeftBtn = document.getElementById("scrollLeft");
+  const scrollRightBtn = document.getElementById("scrollRight");
+
+  if (!scrollContainer || !scrollLeftBtn || !scrollRightBtn) return;
+
+  const scrollAmount = 250;
+
+  // Scroll buttons
+  scrollLeftBtn.addEventListener("click", () => {
+    scrollContainer.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+  });
+
+  scrollRightBtn.addEventListener("click", () => {
+    scrollContainer.scrollBy({ left: scrollAmount, behavior: "smooth" });
+  });
+
+  // Update visibility of buttons
+  function updateScrollButtons() {
+    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+    scrollLeftBtn.style.display = scrollContainer.scrollLeft <= 0 ? "none" : "flex";
+    scrollRightBtn.style.display =
+      scrollContainer.scrollLeft >= maxScroll - 5 ? "none" : "flex";
+  }
+
+  // Run on scroll & resize
+  scrollContainer.addEventListener("scroll", updateScrollButtons);
+  window.addEventListener("resize", updateScrollButtons);
+
+  // Initial check
+  updateScrollButtons();
+});
+
+
+document.addEventListener("DOMContentLoaded", function() {
+  const fadeEls = document.querySelectorAll(".fade-in-on-scroll");
+
+  const appearOptions = {
+    threshold: 0.1, // start fading in when 10% visible
+  };
+
+  const appearOnScroll = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+      } else {
+        entry.target.classList.remove("visible"); // Remove when scrolled out
+      }
+    });
+  }, appearOptions);
+
+  fadeEls.forEach(el => appearOnScroll.observe(el));
+});
+document.addEventListener("DOMContentLoaded", () => {
+  const logoutButtons = document.querySelectorAll(".logout-btn");
+
+  if (logoutButtons.length === 0) {
+    console.warn("Logout button not found!");
+    return;
+  }
+
+  logoutButtons.forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      console.log("Logout clicked");
+
+      try {
+        const res = await fetch("/api/logout", {
+          method: "POST",
+          credentials: "include"
+        });
+
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+
+        const data = await res.json();
+        console.log("Logout response:", data);
+
+        // Clear browser state
+        localStorage.removeItem("user_name");
+        document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+
+        // Redirect
+        window.location.href = "/static/login.html";
+      } catch (err) {
+        console.error("Logout failed:", err);
+        alert("Error logging out. Try again.");
+      }
+    });
+  });
+});
+
+// ===== DASHBOARD USER CHECK & AUTO-LOGOUT =====
+async function checkUserSession() {
+  try {
+    const res = await fetch("/api/session", { credentials: "include" });
+    const data = await res.json();
+
+    if (!data.active) throw new Error("Session expired");
+
+    document.getElementById("greeting").innerText = `Hello, ${data.email.split("@")[0]}!`;
+    localStorage.setItem("user_name", data.email);
+  } catch (err) {
+    console.warn("Session invalid or expired:", err);
+    localStorage.removeItem("user_name");
+    window.location.href = "/static/login.html";
+  }
+}
+checkUserSession();
+
+
+// Decode JWT payload
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+            '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+        ).join(''));
+        return JSON.parse(jsonPayload);
+    } catch(e) { return null; }
+}
+
+// Show session expired modal
+function showSessionExpiredModal() {
+    const modal = document.getElementById('sessionExpiredModal');
+    modal.style.display = 'flex';
+    disableDashboardInteractions();
+    document.getElementById('sessionExpiredLoginBtn').addEventListener('click', () => {
+        localStorage.removeItem("user_name");
+        document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.href = "/static/login.html";
+    });
+}
+
+// Check JWT in real-time
+function startSessionTimer() {
+    const tokenCookie = document.cookie.split('; ').find(row => row.startsWith('access_token='));
+    if (!tokenCookie) return;
+
+    const token = tokenCookie.split('=')[1];
+    const payload = parseJwt(token);
+    if (!payload || !payload.exp) return;
+
+    const expiryTime = payload.exp * 1000;
+    const now = Date.now();
+    const timeout = expiryTime - now;
+
+    if (timeout <= 0) {
+        showSessionExpiredModal();
+    } else {
+        setTimeout(showSessionExpiredModal, timeout);
+    }
+}
+startSessionTimer();
+
+function disableDashboardInteractions() {
+    // Disable buttons, inputs, cards, sidebar links
+    document.querySelectorAll('button, input, .recipe-card, .sidebar a, .search-bar, #ingredient-input').forEach(el => {
+        el.disabled = true;
+        el.style.pointerEvents = 'none';
+        el.style.opacity = 0.5;
+    });
+    if (recipeGrid) recipeGrid.style.pointerEvents = 'none';
+}
+
+// ===== Search button logic =====
+document.getElementById("search-btn").addEventListener("click", async () => {
+  const input = document.getElementById("ingredient-input").value.trim();
+  if (!input) return;
+  const ingredients = input.split(",").map(i => i.trim()).filter(i => i);
+  
+  try {
+    const response = await fetch("/suggest_recipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ingredients })
+    });
+    const data = await response.json();
+    const container = document.getElementById("suggestions-container");
+    container.innerHTML = "";
+
+    if (data.suggested_recipes && data.suggested_recipes.length > 0) {
+      data.suggested_recipes.forEach(r => {
+        const card = document.createElement("div");
+        card.classList.add("recipe-card");
+        card.dataset.name = r.TranslatedRecipeName;
+        card.innerHTML = `
+          <img src="${r.image}" alt="${r.TranslatedRecipeName}">
+          <h5>${capitalizeWords(r.TranslatedRecipeName)}</h5>
+        `;
+        card.addEventListener("click", () => {
+          const recipeName = encodeURIComponent(r.TranslatedRecipeName);
+          window.location.href = `/static/recipe.html?name=${recipeName}`;
+        });
+        container.appendChild(card);
+      });
+    } else {
+      container.innerHTML = "<p style='text-align:center;'>No recipes found.</p>";
+    }
+  } catch (err) {
+    console.error("Search error:", err);
+  }
+});
+
+// ===== References =====
+const input = document.getElementById("ingredient-input");
+const suggestionsBox = document.getElementById("live-suggestions");
+const recipeGrid = document.getElementById("suggestions-container");
+
+let recipeCards = [];       // all recipes from JSON
+let allIngredients = [];    // unique ingredients for suggestions
+let typingTimer;
+const typingDelay = 300;
+
+// ===== Load recipes from JSON =====
+async function loadRecipes() {
+    try {
+        const res = await fetch("/static/final_data_updated.recipes.json");
+        recipeCards = await res.json();
+
+        // Extract unique ingredients
+        allIngredients = [...new Set(recipeCards.flatMap(r => r.main_ingredients))];
+    } catch (err) {
+        console.error("Failed to load recipes:", err);
+    }
+}
+
+loadRecipes();
+
+// ===== Input event with debounce =====
+input.addEventListener("input", () => {
+  clearTimeout(typingTimer);
+  const query = input.value.trim().split(",").pop().trim(); // get last typed ingredient
+
+  if (query.length < 1) {
+    suggestionsBox.style.display = "none";
+    return;
+  }
+
+  typingTimer = setTimeout(() => {
+    // Get matching ingredients (limit to 10)
+    const matches = allIngredients
+      .filter(ingredient => ingredient.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 20); // ✅ Limit suggestions to top 10
+
+    showIngredientSuggestions(matches);
+  }, typingDelay);
+});
+
+
+// ===== Show filtered ingredient suggestions =====
+function showIngredientSuggestions(matches) {
+  suggestionsBox.innerHTML = "";
+
+  if (matches.length === 0) {
+    suggestionsBox.style.display = "none";
+    return;
+  }
+
+  matches.forEach(match => {
+    const div = document.createElement("div");
+    div.textContent = match;
+    div.classList.add("suggestion-item");
+    div.addEventListener("click", () => {
+      let currentInput = input.value.trim();
+      const ingredients = currentInput.split(",").map(i => i.trim()).filter(i => i);
+      ingredients[ingredients.length - 1] = match; // replace last typed with selected one
+      input.value = ingredients.join(", ") + ", ";
+      suggestionsBox.style.display = "none";
+    });
+    suggestionsBox.appendChild(div);
+  });
+
+  suggestionsBox.style.display = "block";
+}
+
+// ===== Render ingredient dropdown =====
+function renderIngredientSuggestions(ingredients) {
+    suggestionsBox.innerHTML = "";
+    if (!ingredients.length) {
+        suggestionsBox.style.display = "none";
+        return;
+    }
+
+    ingredients.forEach(ing => {
+        const div = document.createElement("div");
+        div.textContent = ing;
+        div.addEventListener("click", () => {
+            // Replace the last typed ingredient with selected one
+            const parts = input.value.split(",");
+            parts[parts.length - 1] = ing;
+            input.value = parts.join(", ");
+            suggestionsBox.style.display = "none";
+        });
+        suggestionsBox.appendChild(div);
+    });
+
+    suggestionsBox.style.display = "block";
+}
+
+// ===== Hide suggestions on outside click =====
+document.addEventListener("click", e => {
+    if (!e.target.closest(".search-bar")) suggestionsBox.style.display = "none";
+});
+
+// ===== Update recipe grid based on selected ingredient(s) =====
+function updateRecipeGrid(selectedIngredients) {
+    recipeGrid.innerHTML = ""; // clear previous cards
+
+    const filteredRecipes = recipeCards.filter(recipe =>
+        recipe.main_ingredients.some(ing =>
+            selectedIngredients.includes(ing)
+        )
+    );
+
+    if (!filteredRecipes.length) {
+        recipeGrid.innerHTML = "<p style='text-align:center;'>No recipes found.</p>";
+        return;
+    }
+
+    filteredRecipes.forEach(r => {
+        const card = document.createElement("div");
+        card.classList.add("recipe-card");
+        card.dataset.name = r.TranslatedRecipeName;
+        card.innerHTML = `
+            <img src="${r.image}" alt="${r.TranslatedRecipeName}">
+            <h5>${capitalizeWords(r.TranslatedRecipeName)}</h5>
+        `;
+        card.addEventListener("click", () => {
+            const recipeName = encodeURIComponent(r.TranslatedRecipeName);
+            window.location.href = `/static/recipe.html?name=${recipeName}`;
+        });
+        recipeGrid.appendChild(card);
+    });
+}
+
+// ===== Capitalize words helper =====
+function capitalizeWords(str) {
+    return str.replace(/_/g, ' ')
+              .toLowerCase()
+              .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// ===== Search button click =====
+document.getElementById("search-btn").addEventListener("click", () => {
+    const ingredients = input.value.split(",").map(i => i.trim()).filter(i => i);
+    if (!ingredients.length) return;
+    updateRecipeGrid(ingredients); // only now show recipes
+});
+
+</script>
+
+</body>
+</html>
+

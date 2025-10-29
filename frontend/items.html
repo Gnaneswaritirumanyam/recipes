@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuisine Recipes</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+/* ===== GLOBAL ===== */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100vh;
+  background-color: #ff5722;
+  padding-top: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  transition: transform 0.3s ease;
+  z-index: 1100;
+}
+
+/* mobile default hidden */
+@media (max-width: 992px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.active { transform: translateX(0); }
+}
+
+/* desktop toggle hidden */
+@media (min-width: 993px) {
+  .sidebar { transform: translateX(0); }
+  .sidebar.hidden { transform: translateX(-250px); } /* FULL width hidden */
+}
+
+.sidebar a {
+  padding: 15px 20px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+}
+.sidebar a:hover { background-color: #e64a19; }
+
+/* ===== MENU BUTTON ===== */
+.sidebar-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background-color: #f94f1b;
+  border: none;
+  color: white;
+  padding: 10px 15px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1200;
+}
+
+/* ===== OVERLAY ===== */
+#overlay {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(3px);
+  display: none;
+  z-index: 1050;
+}
+#overlay.active { display: block; }
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* CENTER CONTENT */
+}
+
+/* HEADER TEXT */
+.header-text {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff5722;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* SEARCH BAR */
+.search-bar {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 30px auto;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.search-bar input {
+  width: 70%;
+  padding: 10px 15px;
+  border-radius: 25px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  outline: none;
+}
+.search-bar button {
+  background-color: #ff5722;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* CUISINE GRID */
+.cuisine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.cuisine-card {
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.cuisine-card:hover { transform: scale(1.05); }
+.cuisine-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.cuisine-card p {
+  margin: 8px 0;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* PROFILE SECTION */
+#profileSection {
+  display: none;
+  background: linear-gradient(180deg, #ffe5b4, #ffd8a8);
+  width: 100%; height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 1000;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+#profileSection img {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  margin-top: 60px;
+}
+#backTocuisine {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff5722;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) { .main-content.shifted { margin-left: 0; } }
+@media (max-width: 576px) { .cuisine-card img { height: 100px; } }
+
+/* Header */
+.recipe-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 30px 0 15px;
+  width: 100%;
+  justify-content: center;
+}
+#backArrow {
+  font-size: 28px;
+  cursor: pointer;
+  color: #ff5722;
+}
+#backArrow:hover { color: #e64a19; transform: scale(1.2); }
+#cuisineTitle { font-size: 28px; font-weight: 600; text-align: center; }
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+#recipe-search {
+  width: 70%;
+  max-width: 500px;
+  padding: 10px 15px;
+  border-radius: 25px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+/* RECIPE GRID */
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns on large screens */
+  gap: 25px;
+  padding: 25px;
+  max-width: 1400px; /* wider container for 4 columns */
+  margin: auto;
+  justify-items: center; /* ensures cards are centered within grid cells */
+}
+
+/* RECIPE CARD */
+.recipe-card {
+  background-color: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  width: 300px; /* slightly smaller to fit 4 columns nicely */
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+/* RECIPE IMAGE */
+.recipe-card img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border-bottom: none;
+}
+
+/* RECIPE TITLE */
+.recipe-card h5 {
+  padding: 12px;
+  text-align: center;
+  font-size: 18px;
+  background-color: #ff5722;
+  color: #fff;
+  border-radius: 0 0 15px 15px;
+  margin: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .recipe-grid { grid-template-columns: repeat(3, 1fr); } /* 3 columns */
+}
+
+@media (max-width: 992px) {
+  .recipe-grid { grid-template-columns: repeat(2, 1fr); } /* 2 columns */
+}
+
+@media (max-width: 600px) {
+  .recipe-grid { grid-template-columns: 1fr; } /* 1 column */
+  .recipe-card { max-width: 90%; }
+}
+
+/* Hover effect */
+.recipe-card:hover { transform: scale(1.03); }
+
+
+#bg-image {
+  position: fixed;       /* Cover entire screen */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;     /* Maintain aspect ratio */
+  z-index: -1;           /* Behind all content */
+}
+
+</style>
+</head>
+<body>
+  <!-- Background Image -->
+<img src="/static/images/hom.png" alt="Background" id="bg-image">
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+  <div class="recipe-header">
+    <i id="backArrow" class="bi bi-arrow-left-circle"></i>
+    <h2 id="cuisineTitle"></h2>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="recipe-search" placeholder="Search recipes...">
+     <button id="search-btn">Search</button>
+  </div>
+
+  <div class="recipe-grid" id="recipe-grid"></div>
+
+</div>
+
+<script>
+// ===== Utilities =====
+const recipeGrid = document.getElementById("recipe-grid");
+const recipeSearch = document.getElementById("recipe-search");
+const cuisineTitle = document.getElementById("cuisineTitle");
+
+// Get cuisine from URL query
+const params = new URLSearchParams(window.location.search);
+const cuisine = params.get("cuisine");
+// Prevent double "Recipes"
+let title = cuisine.trim();
+if (!/recipes$/i.test(title)) {
+  title += " Recipes";
+}
+cuisineTitle.textContent = title;
+
+let recipes = []; // store loaded recipes
+
+// Load JSON from static folder
+fetch("/static/filtered_recipes_by_cuisine.json")
+  .then(res => res.json())
+  .then(data => {
+    recipes = data[cuisine] || [];
+    renderRecipes(recipes);
+  })
+  .catch(err => console.error("Failed to load recipes:", err));
+
+// Helper function: Capitalize first letter of each word
+function capitalizeWords(str) {
+  return str.replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function renderRecipes(recipes) {
+  recipeGrid.innerHTML = "";
+
+  const seenImages = new Set();
+  const seenNames = new Set();
+
+  recipes.forEach(r => {
+    if (!r || !r.name) return;
+
+    // ---- Step 1: Skip Hindi recipes if same image/name exists ----
+    if (/\(recipe in hindi\)/i.test(r.name)) return;
+
+    // --- Clean name ---
+    let cleanName = r.name
+      .replace(/\(recipe in hindi\)/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+   // ❌ Skip titles that look like "A Recipe - A Recipe" or "A Recipe - B Recipe"
+      if (name.includes(" - ")) {
+        const [part1, part2] = name.split(" - ").map(s => s.trim().toLowerCase());
+        // If both sides share most words or look too similar, remove this entry
+        if (stringSimilarity(part1, part2) > 0.75) {
+          console.log("Removed duplicate-like title:", name);
+          return; // Skip showing this duplicate recipe
+        }
+      }
+    // ---- Step 3: Skip duplicates ----
+    if (!r.image || seenImages.has(r.image) || seenNames.has(cleanName.toLowerCase())) return;
+
+    seenImages.add(r.image);
+    seenNames.add(cleanName.toLowerCase());
+
+    // ---- Step 4: Render recipe card ----
+    const img = new Image();
+    img.src = r.image;
+
+    img.onload = () => {
+      const div = document.createElement("div");
+      div.className = "recipe-card";
+      div.innerHTML = `
+        <img src="${r.image}" alt="${cleanName}">
+        <h5>${capitalizeWords(cleanName)}</h5>
+      `;
+      div.addEventListener("click", () => {
+        window.location.href = `/static/recipe.html?cuisine=${encodeURIComponent(cuisine)}&name=${encodeURIComponent(cleanName)}`;
+      });
+      recipeGrid.appendChild(div);
+    };
+
+    img.onerror = () => {
+      console.warn(`Skipping recipe "${cleanName}" because image not found: ${r.image}`);
+    };
+  });
+}
+
+// ===== Helper functions =====
+function stringSimilarity(a, b) {
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  const longerLength = longer.length;
+  if (longerLength === 0) return 1.0;
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longerLength - editDistance) / parseFloat(longerLength);
+}
+
+function levenshteinDistance(s1, s2) {
+  const track = Array(s2.length + 1).fill().map(() => []);
+  for (let i = 0; i <= s2.length; i++) track[i][0] = i;
+  for (let j = 0; j <= s1.length; j++) track[0][j] = j;
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      track[i][j] = Math.min(
+        track[i - 1][j] + 1,
+        track[i][j - 1] + 1,
+        track[i - 1][j - 1] + (s2[i - 1] === s1[j - 1] ? 0 : 1)
+      );
+    }
+  }
+  return track[s2.length][s1.length];
+}
+
+// Search functionality
+recipeSearch.addEventListener("input", () => {
+  const filter = recipeSearch.value.toLowerCase();
+  const filtered = recipes.filter(r => r.name.toLowerCase().includes(filter));
+  renderRecipes(filtered);
+});
+
+// Back arrow
+document.getElementById("backArrow").addEventListener("click", () => {
+  window.location.href = "/cuisine"; // redirect to cuisine page
+});
+
+
+
+// ===== LOGOUT =====
+document.getElementById("logoutBtn").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    await fetch("/api/logout", { method:"POST", credentials:"include" });
+    localStorage.removeItem("user_name");
+    window.location.href = "/static/login.html";
+  } catch(err){
+    console.error("Logout failed:", err);
+    alert("Error logging out. Try again.");
+  }
+});
+</script>
+</body>
+</html>

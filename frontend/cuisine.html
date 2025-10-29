@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explore Cuisines</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+/* ===== GLOBAL ===== */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  overflow-x: hidden;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* CENTER CONTENT */
+}
+
+/* HEADER TEXT */
+.header-text {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff5722;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* SEARCH BAR */
+.search-bar {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto 30px auto;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.search-bar input {
+  width: 70%;
+  padding: 10px 15px;
+  border-radius: 25px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+  outline: none;
+}
+.search-bar button {
+  background-color: #ff5722;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* CUISINE GRID */
+.cuisine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.cuisine-card {
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.cuisine-card:hover { transform: scale(1.05); }
+.cuisine-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+.cuisine-card p {
+  margin: 8px 0;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) { .main-content.shifted { margin-left: 0; } }
+@media (max-width: 576px) { .cuisine-card img { height: 100px; } }
+
+#bg-image {
+  position: fixed;       /* Cover entire screen */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;     /* Maintain aspect ratio */
+  z-index: -1;           /* Behind all content */
+}
+
+/* ===== Navbar: Simple Transparent ===== */
+
+.navbar {
+  position: relative; /* instead of fixed */
+  top: 0;
+  width: 100%;
+  background: transparent !important;
+  padding: 15px 0;
+  z-index: 1050;
+}
+
+/* Navbar Links */
+.navbar-brand {
+  color: white !important;
+  font-family: 'Poppins', sans-serif;
+}
+.navbar-nav .nav-link {
+  color: rgb(0, 0, 0) !important;
+  font-size: 1rem;
+  transition: 0.3s;
+}
+.navbar-nav .nav-link:hover {
+  color: orangered !important;
+}
+
+
+/* Mobile menu background */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    background-color: rgba(0,0,0,0.9);
+    padding: 15px;
+  }
+}
+
+
+/* Mobile Scrolling Nav */
+.mobile-nav {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.mobile-nav .scrolling-nav a {
+  display: inline-block;
+  padding: 8px 12px;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+
+.mobile-nav .scrolling-nav a:hover {
+  border-color: #ff5722;
+}
+
+/* Hide desktop nav on small screens */
+@media (max-width: 992px) {
+  .navbar .collapse {
+    display: none !important;
+  }
+}
+/* mobile scroll wrapper */
+.mobile-nav-wrapper {
+  display: block;
+  padding: 6px 8px;              /* ensures first/last items aren't clipped */
+  margin-top: 6px;
+  overflow: visible;
+  align-items: center;
+}
+
+/* Scrolling nav: touch-friendly + snap */
+.scrolling-nav {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 40px; /* extra padding so first/last don't get clipped under the buttons */
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+
+/* each link snaps to start */
+.scrolling-nav .mobile-link {
+  display: inline-block;
+  padding: 8px 14px;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  border-radius: 8px;
+  transition: background .18s, transform .12s;
+}
+
+/* visible style + easier tap target */
+.scrolling-nav .mobile-link:hover,
+.scrolling-nav .mobile-link:focus {
+  background: rgba(255,87,34,0.12);
+  transform: translateY(-2px);
+}
+
+/* make sure the scroll container is not clipped on very small screens */
+@media (max-width: 420px) {
+  .mobile-scroll-btn { width: 32px; height: 32px; font-size:18px; }
+  .scrolling-nav { padding-left: 36px; padding-right: 36px; gap:10px; }
+}
+
+.logo-img {
+  height: 70px;
+  width: auto;
+  margin-right: 6px;
+  position: relative;
+  top: 0px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+.logo-text {
+  position: relative;
+  top: 10px;  /* adjust this to move text down */
+  font-size: 2rem;
+  font-weight: bold;
+  color: orangered;
+}
+
+/* Responsive tweak */
+@media (max-width: 768px) {
+  .logo-img {
+    height: 60px;
+    top: 0px;
+  }
+  .logo-text {
+    top: 10px;
+  }
+}
+
+/* ✅ Force 3 per row on mobile */
+@media (max-width: 768px) {
+  .cuisine-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .cuisine-card img {
+    height: 90px;
+  }
+  .cuisine-card p {
+    font-size: 12px;
+  }
+}
+</style>
+</head>
+<body>
+<!-- Background Image -->
+<img src="/static/images/cusi.png" alt="Background" id="bg-image">
+
+
+<!-- 🔸 Modern Top Navbar -->
+<nav class="navbar navbar-expand-lg py-2">
+  <div class="container-fluid px-4">
+
+    <!-- Centered Brand -->
+<a class="navbar-brand mx-auto d-flex align-items-center text-orange fw-bold fs-3" href="#">
+  <img src="static/images/logo4.png" alt="CookingHub Logo" class="me-2 logo-img">
+  <span class="logo-text">CookingHub</span>
+</a>
+
+    <!-- Desktop Navigation -->
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav align-items-center gap-lg-3">
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/dashboard">Home</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/cuisine">Cuisine</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/reviews">Reviews</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/profile">Profile</a></li>
+        <li class="nav-item"><a class="nav-link text-white fw-semibold" href="#about-section">About</a></li>
+    </div>
+      </ul>
+     <!-- 📱 Mobile Scrollable Links (replace existing mobile-nav) -->
+<div class="d-lg-none w-100 mt-2 mobile-nav-wrapper position-relative">
+
+
+  <div class="mobile-nav mt-2 text-center">
+    <div class="scrolling-nav d-flex gap-3 px-3" id="mobileScrollingNav">
+      <a href="/dashboard" class="mobile-link text-black fw-semibold text-decoration-none">Home</a>
+      <a href="/cuisine" class="mobile-link text-black fw-semibold text-decoration-none">Cuisine</a>
+      <a href="/reviews" class="mobile-link text-black fw-semibold text-decoration-none">Reviews</a>
+      <a href="/profile" class="mobile-link text-black fw-semibold text-decoration-none">Profile</a>
+      <a href="#about-section" class="mobile-link text-black fw-semibold text-decoration-none">About</a>
+    </div>
+  </div>
+
+</div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-content" id="mainContent">
+  <h2 class="header-text">Explore Cuisines</h2>
+  <div class="search-bar">
+    <input type="text" id="cuisine-search" placeholder="Search cuisine...">
+    <button id="search-btn">Search</button>
+  </div>
+  <div class="cuisine-grid" id="cuisine-grid"></div>
+</div>
+
+<script>
+// ===== CUISINES =====
+const cuisines = ["African","American","Andhra","Arab","Asian","Assamese","Awadhi",
+  "Bengali Recipes","Bihari","British","Cantonese","Caribbean","Chettinad","Chinese",
+  "Coastal Karnataka","Continental","Coorg","European","French","Fusion","Goan Recipes",
+  "Greek","Hyderabadi","Indian","Indo Chinese","Indonesian",
+  "Italian Recipes","Japanese","Jharkhand","Karnataka","Kashmiri","Kerala Recipes","Kongunadu","Konkan",
+  "Korean","Lucknowi","Maharashtrian Recipes","Malabar","Malaysian","Malvani","Mangalorean","Mediterranean",
+  "Mexican","Middle Eastern","Mughlai","Nagaland","Nepalese","North East India Recipes","North Indian Recipes",
+  "North Karnataka","Oriya Recipes","Pakistani","Parsi Recipes","Punjabi","Rajasthani","Sichuan",
+  "Sindhi","South Indian Recipes","South Karnataka","Sri Lankan","Tamil Nadu","Thai","Udupi",
+  "Uttar Pradesh","Vietnamese"];
+
+const cuisineGrid = document.getElementById("cuisine-grid");
+const searchInput = document.getElementById("cuisine-search");
+
+
+function renderCuisines(filter="") {
+  cuisineGrid.innerHTML = "";
+  cuisines
+    .filter(c => c.toLowerCase().includes(filter.trim().toLowerCase()))
+    .forEach(c => {
+      const card = document.createElement("div");
+      card.className = "cuisine-card";
+      const imgName = c.replace(/\s/g,'_');  // Converts "North Indian Recipes" → "North_Indian_Recipes"
+      card.innerHTML = `<img src="/static/images/${imgName}.jpg" alt="${c}"><p>${c}</p>`;
+      
+      // ✅ Make cuisine card clickable and redirect to item.html with query param
+      card.addEventListener("click", () => {
+        const encodedCuisine = encodeURIComponent(c);
+        window.location.href = `/static/items.html?cuisine=${encodedCuisine}`;
+
+      });
+
+      cuisineGrid.appendChild(card);
+    });
+}
+
+renderCuisines();
+searchInput.addEventListener("input", () => renderCuisines(searchInput.value));
+
+
+
+</script>
+</body>
+</html>

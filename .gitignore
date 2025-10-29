@@ -1,0 +1,8 @@
+backend/.env
+.env
+images/
+recipes_images/
+.env
+images/
+recipes_images/
+*.log
