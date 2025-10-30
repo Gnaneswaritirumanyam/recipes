@@ -23,14 +23,17 @@ MONGO_URI = os.getenv("MONGO_URI")
 RECAPTCHA_SECRET = os.getenv("RECAPTCHA_SECRET_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 720))
 ALGORITHM = "HS256"
-STATIC_DIR = os.getenv("STATIC_DIR", r"C:/Users/tirum/OneDrive/Desktop/AIRecipes")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(BASE_DIR)
+STATIC_DIR = os.getenv("STATIC_DIR", os.path.join(PARENT_DIR, "frontend"))
+
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 MAX_BCRYPT_LEN = 72  
 origins = os.getenv("FRONTEND_ORIGINS","http://127.0.0.1:8000" ).split(",")
-
 
 client = MongoClient(MONGO_URI)
 auth_db = client["myapp"]

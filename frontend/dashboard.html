@@ -614,7 +614,6 @@ body {
     <div class="d-lg-none position-absolute end-0 me-3">
       <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
     </div>
-
     <!-- Desktop Navigation -->
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
       <ul class="navbar-nav align-items-center gap-lg-3">
@@ -624,24 +623,19 @@ body {
         <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/profile">Profile</a></li>
         <li class="nav-item"><a class="nav-link text-white fw-semibold" href="#about-section">About</a></li>
         <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
-
     </div>
       </ul>
      <!-- 📱 Mobile Scrollable Links (replace existing mobile-nav) -->
 <div class="d-lg-none w-100 mt-2 mobile-nav-wrapper position-relative">
-
-
   <div class="mobile-nav mt-2 text-center">
     <div class="scrolling-nav d-flex gap-3 px-3" id="mobileScrollingNav">
-      <a href="/dashboard" class="mobile-link text-black fw-semibold text-decoration-none">Home</a>
-      <a href="/cuisine" class="mobile-link text-black fw-semibold text-decoration-none">Cuisine</a>
-      <a href="/reviews" class="mobile-link text-black fw-semibold text-decoration-none">Reviews</a>
-      <a href="/profile" class="mobile-link text-black fw-semibold text-decoration-none">Profile</a>
-      <a href="#about-section" class="mobile-link text-black fw-semibold text-decoration-none">About</a>
-       <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
+      <a href="/dashboard" class="mobile-link text-black fw-semibold text-decoration-none">🏡Home</a>
+      <a href="/cuisine" class="mobile-link text-black fw-semibold text-decoration-none">🍽️Cuisine</a>
+      <a href="/reviews" class="mobile-link text-black fw-semibold text-decoration-none">🌟Reviews</a>
+      <a href="/profile" class="mobile-link text-black fw-semibold text-decoration-none">👤Profile</a>
+      <a href="#about-section" class="mobile-link text-black fw-semibold text-decoration-none">💡About</a>
     </div>
   </div>
-
 </div>
 
 </nav>
@@ -768,7 +762,7 @@ body {
         <h4 class="fw-bold glowing-text">Gnaneswari Tirumanyam</h4>
         <p class="mb-1"><i class="bi bi-envelope"></i> gnaneswari@example.com</p>
         <p class="mb-1"><i class="bi bi-telephone"></i> +91 98765 43210</p>
-        <p class="mb-3"><i class="bi bi-geo-alt"></i> Hyderabad, India</p>
+        <p class="mb-3"><i class="bi bi-geo-alt"></i> Tirupathi, India</p>
 
         <div class="d-flex justify-content-center gap-4 fs-4">
           <a class="text-white">🅾</a>
@@ -846,24 +840,30 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// ===== Greeting & Session Check =====
-async function loadUser() {
-    try {
-        const res = await fetch("/api/dashboard", {
-            credentials: "include" // send HTTP-only cookie
-        });
-        if (!res.ok) throw new Error("Not authenticated");
-        const data = await res.json();
-        const userName = data.user.name || "Guest";
-        document.getElementById("greeting").innerText = `Hello, ${userName}!`;
-        localStorage.setItem("user_name", userName);
-    } catch (err) {
-        console.log("Session expired or not logged in:", err);
-        window.location.href = "/static/login.html"; // redirect immediately
-    }
+
+// ===== DASHBOARD USER CHECK & AUTO-LOGOUT =====
+async function checkUserSession() {
+  try {
+    const res = await fetch("/api/dashboard", { credentials: "include" }); // use dashboard API
+    if (!res.ok) throw new Error("Not authenticated");
+
+    const data = await res.json();
+    const userName = data.user?.name || data.name || data.email?.split("@")[0] || "Guest";
+
+    // Update greeting
+    document.getElementById("greeting").innerText = `Hello, ${userName}!`;
+
+    // Store locally for other scripts
+    localStorage.setItem("user_name", userName);
+  } catch (err) {
+    console.warn("Session invalid or expired:", err);
+    localStorage.removeItem("user_name");
+    window.location.href = "/static/login.html"; // redirect if no valid session
+  }
 }
+
 // Call on page load
-loadUser();
+checkUserSession();
 
 // ===== Make initial cards clickable & capitalize names =====
 document.querySelectorAll('.recipe-card').forEach(card => {
@@ -969,23 +969,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== DASHBOARD USER CHECK & AUTO-LOGOUT =====
-async function checkUserSession() {
-  try {
-    const res = await fetch("/api/session", { credentials: "include" });
-    const data = await res.json();
-
-    if (!data.active) throw new Error("Session expired");
-
-    document.getElementById("greeting").innerText = `Hello, ${data.email.split("@")[0]}!`;
-    localStorage.setItem("user_name", data.email);
-  } catch (err) {
-    console.warn("Session invalid or expired:", err);
-    localStorage.removeItem("user_name");
-    window.location.href = "/static/login.html";
-  }
-}
-checkUserSession();
 
 
 // Decode JWT payload
