@@ -307,6 +307,58 @@ body {
   z-index: -1;           /* Behind all content */
 }
 
+
+/* ===== Floating AI Icon ===== */
+#ai-icon {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  opacity: 0;
+  transform: scale(0.8);
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* When visible */
+#ai-icon.show {
+  opacity: 1;
+  transform: scale(1);
+  animation: pulse 3s infinite ease-in-out;  /* 👈 Gentle breathing effect */
+}
+
+/* Hover effect */
+#ai-icon:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Mobile size adjustment */
+@media (max-width: 600px) {
+  #ai-icon {
+    width: 60px;
+    height: 60px;
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -468,6 +520,27 @@ document.getElementById("logoutBtn").addEventListener("click", async (e) => {
     console.error("Logout failed:", err);
     alert("Error logging out. Try again.");
   }
+});
+</script>
+
+<!-- Floating AI Icon -->
+<img id="ai-icon" src="/static/images/ai.png" alt="AI Assistant">
+<script>
+// ===== Floating AI Icon Effect (always visible) =====
+const aiIcon = document.getElementById("ai-icon");
+
+// Make sure it's visible once the page loads
+window.addEventListener("load", () => {
+  aiIcon.classList.add("show");
+});
+
+// On click → go to /ai page
+aiIcon.addEventListener("click", () => {
+  aiIcon.style.transform = "scale(1.2)";
+  aiIcon.style.transition = "transform 0.3s ease";
+  setTimeout(() => {
+    window.location.href = "/ai";
+  }, 300); // smooth transition before redirect
 });
 </script>
 </body>

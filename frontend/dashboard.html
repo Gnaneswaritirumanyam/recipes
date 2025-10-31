@@ -594,6 +594,59 @@ body {
   background-attachment: fixed;
 }
 
+/* ===== Floating AI Icon ===== */
+#ai-icon {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  opacity: 0;
+  transform: scale(0.8);
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* When visible */
+#ai-icon.show {
+  opacity: 1;
+  transform: scale(1);
+  animation: pulse 3s infinite ease-in-out;  /* 👈 Gentle breathing effect */
+}
+
+/* Hover effect */
+#ai-icon:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Mobile size adjustment */
+@media (max-width: 600px) {
+  #ai-icon {
+    width: 60px;
+    height: 60px;
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+
+
 </style>
 </head>
 <body>
@@ -690,7 +743,6 @@ body {
       <img src="/static/recipes_images/Chettinad_Style_Chicken_Roast_Recipe.jpg" alt="Chettinad Chicken Roast">
       <h5>Chettinad Chicken Roast</h5>
   </div>
-
 
   <div class="recipe-card" data-name="vegan chickpea omelette recipe (spiced chickpea flour pancakes)">
       <img src="/static/recipes_images/Vegan_Chickpea_Omelette_Recipe_Spiced_Chickpea_Flour_Pancakes.jpg" alt="chickpea omelette">
@@ -810,7 +862,6 @@ body {
   </div>
 </section>
 <script>
-
 // ===== Helper: Capitalize words =====
 function capitalizeWords(str) {
     return str.replace(/_/g, ' ')
@@ -1018,7 +1069,7 @@ startSessionTimer();
 
 function disableDashboardInteractions() {
     // Disable buttons, inputs, cards, sidebar links
-    document.querySelectorAll('button, input, .recipe-card, .sidebar a, .search-bar, #ingredient-input').forEach(el => {
+    document.querySelectorAll('button, input, .recipe-card, .navbar a, .search-bar, #ingredient-input').forEach(el => {
         el.disabled = true;
         el.style.pointerEvents = 'none';
         el.style.opacity = 0.5;
@@ -1066,29 +1117,39 @@ document.getElementById("search-btn").addEventListener("click", async () => {
 });
 
 // ===== References =====
+let recipeCards = [];       // all recipes from main JSON
+let allIngredients = [];    // ingredient list for suggestions
+let typingTimer;
+const typingDelay = 300;
 const input = document.getElementById("ingredient-input");
 const suggestionsBox = document.getElementById("live-suggestions");
 const recipeGrid = document.getElementById("suggestions-container");
 
-let recipeCards = [];       // all recipes from JSON
-let allIngredients = [];    // unique ingredients for suggestions
-let typingTimer;
-const typingDelay = 300;
-
-// ===== Load recipes from JSON =====
+// ===== Load recipes (for matching later) =====
 async function loadRecipes() {
-    try {
-        const res = await fetch("/static/final_data_updated.recipes.json");
-        recipeCards = await res.json();
-
-        // Extract unique ingredients
-        allIngredients = [...new Set(recipeCards.flatMap(r => r.main_ingredients))];
-    } catch (err) {
-        console.error("Failed to load recipes:", err);
-    }
+  try {
+    const res = await fetch("/static/final_data_updated.recipes.json");
+    recipeCards = await res.json();
+    console.log("✅ Loaded recipes:", recipeCards.length);
+  } catch (err) {
+    console.error("Failed to load recipes:", err);
+  }
 }
 
-loadRecipes();
+// ===== Load ingredients (for live suggestions) =====
+async function loadIngredients() {
+  try {
+    const res = await fetch("/static/ingredients.json");
+    const data = await res.json();
+    allIngredients = data.main_ingredients || [];
+    console.log("✅ Loaded ingredients:", allIngredients.length);
+  } catch (err) {
+    console.error("Failed to load ingredients:", err);
+  }
+}
+
+// ===== Initialize both =====
+Promise.all([loadRecipes(), loadIngredients()]);
 
 // ===== Input event with debounce =====
 input.addEventListener("input", () => {
@@ -1166,37 +1227,6 @@ document.addEventListener("click", e => {
     if (!e.target.closest(".search-bar")) suggestionsBox.style.display = "none";
 });
 
-// ===== Update recipe grid based on selected ingredient(s) =====
-function updateRecipeGrid(selectedIngredients) {
-    recipeGrid.innerHTML = ""; // clear previous cards
-
-    const filteredRecipes = recipeCards.filter(recipe =>
-        recipe.main_ingredients.some(ing =>
-            selectedIngredients.includes(ing)
-        )
-    );
-
-    if (!filteredRecipes.length) {
-        recipeGrid.innerHTML = "<p style='text-align:center;'>No recipes found.</p>";
-        return;
-    }
-
-    filteredRecipes.forEach(r => {
-        const card = document.createElement("div");
-        card.classList.add("recipe-card");
-        card.dataset.name = r.TranslatedRecipeName;
-        card.innerHTML = `
-            <img src="${r.image}" alt="${r.TranslatedRecipeName}">
-            <h5>${capitalizeWords(r.TranslatedRecipeName)}</h5>
-        `;
-        card.addEventListener("click", () => {
-            const recipeName = encodeURIComponent(r.TranslatedRecipeName);
-            window.location.href = `/static/recipe.html?name=${recipeName}`;
-        });
-        recipeGrid.appendChild(card);
-    });
-}
-
 // ===== Capitalize words helper =====
 function capitalizeWords(str) {
     return str.replace(/_/g, ' ')
@@ -1210,9 +1240,29 @@ document.getElementById("search-btn").addEventListener("click", () => {
     if (!ingredients.length) return;
     updateRecipeGrid(ingredients); // only now show recipes
 });
+</script>
+<!-- Floating AI Icon -->
+<img id="ai-icon" src="/static/images/ai.png" alt="AI Assistant">
+<script>
+  
+// ===== Floating AI Icon Effect (always visible) =====
+const aiIcon = document.getElementById("ai-icon");
+
+// Make sure it's visible once the page loads
+window.addEventListener("load", () => {
+  aiIcon.classList.add("show");
+});
+
+// On click → go to /ai page
+aiIcon.addEventListener("click", () => {
+  aiIcon.style.transform = "scale(1.2)";
+  aiIcon.style.transition = "transform 0.3s ease";
+  setTimeout(() => {
+    window.location.href = "/ai";
+  }, 300); // smooth transition before redirect
+});
 
 </script>
-
 </body>
 </html>
 

@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CookingHub AI 🍳</title>
+<style>
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #fffaf5;
+  margin: 0;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 32%;
+  background: #fff3e6;
+  padding: 20px;
+  border-right: 2px solid #ffb84d;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  z-index: 10;
+}
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 6px;
+  color: #e65c00;
+}
+
+p {
+  font-size: 14px;
+  color: #555;
+}
+
+textarea {
+  width: 100%;
+  height: 80px;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ffb84d;
+  resize: none;
+  margin-top: 8px;
+}
+
+.filters label {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.filters select,
+.filters input {
+  margin-left: 6px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #ffb84d;
+}
+
+/* ===== BUTTONS ===== */
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  background: #ff7b00;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  background: #e65c00;
+  transform: scale(1.05);
+}
+
+.sample {
+  margin: 6px 4px;
+  cursor: pointer;
+  color: #e65c00;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+/* ===== CHAT AREA ===== */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  position: relative;
+  background-image: url('/static/images/aichat.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.chat-box {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.message {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-msg {
+  align-items: flex-end;
+}
+
+.user-msg .bubble {
+  background: #ff7b00;
+  color: white;
+  align-self: flex-end;
+}
+
+.ai-msg .bubble {
+  background: #fff3e6;
+  color: #333;
+  border: 1px solid #ffb84d;
+}
+
+.bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  max-width: 70%;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ===== INPUT FOOTER ===== */
+.footer-input {
+  padding: 10px;
+  border-top: 2px solid #ffb84d;
+  display: flex;
+  gap: 10px;
+  background: #fffaf5;
+}
+
+.footer-input input {
+  flex: 1;
+  border-radius: 20px;
+  padding: 10px;
+  border: 1px solid #ffb84d;
+}
+
+.footer-input button {
+  background: #ff7b00;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.footer-input button:hover {
+  background: #e65c00;
+}
+
+/* ===== LOGO ===== */
+.logo-img {
+  height: 70px;
+  width: auto;
+  margin-right: 6px;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+.logo-text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff5722;
+  text-decoration: none;
+}
+
+/* ===== MOBILE VIEW ===== */
+.menu-btn {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ff7b00;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 11;
+}
+
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 80%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    border-right: 2px solid #ffb84d;
+    box-shadow: 3px 0 8px rgba(0,0,0,0.2);
+  }
+
+  .sidebar.active {
+    transform: translateX(0);
+  }
+
+  .chat-container {
+    width: 100%;
+  }
+
+  .menu-btn {
+    display: block;
+  }
+
+  .footer-input {
+    position: relative;
+    z-index: 1;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== MOBILE MENU BUTTON ===== -->
+<button class="menu-btn" id="menuBtn">☰</button>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar" id="sidebar">
+  <a class="navbar-brand d-flex align-items-center text-orange fw-bold fs-3">
+    <img src="static/images/logo4.png" alt="CookingHub Logo" class="me-2 logo-img">
+    <span class="logo-text">CookingHub AI</span>
+  </a>
+  <p>Ask for recipes, substitutions, or step-by-step help. You can also add filters like diet, time, or difficulty.</p>
+
+  <textarea id="prompt" placeholder="e.g. Show me recipes with chicken and mushrooms"></textarea>
+
+  <div class="filters">
+    <label>Diet:
+      <select id="diet">
+        <option value="">Any</option>
+        <option value="vegetarian">Vegetarian</option>
+        <option value="vegan">Vegan</option>
+        <option value="gluten-free">Gluten-free</option>
+        <option value="keto">Keto</option>
+      </select>
+    </label>
+
+    <label style="margin-left:12px">Max Time (mins):
+      <input id="time" type="number" min="0" placeholder="e.g. 20" style="width:80px" />
+    </label>
+
+    <label style="margin-left:12px">Difficulty:
+      <select id="difficulty">
+        <option value="">Any</option>
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="row">
+    <button class="btn" id="askBtn">Ask 🍲</button>
+    <button class="btn" id="surpriseBtn">Surprise Me 🎁</button>
+    <button class="btn" id="clearBtn">Clear ✨</button>
+  </div>
+
+  <div style="margin-top:14px">
+    <strong>Sample prompts:</strong><br>
+    <span class="sample" data-text="Show me recipes with chicken and mushrooms">🍗 Chicken & Mushrooms</span> |
+    <span class="sample" data-text="Give me low-carb Indian breakfast options">🥞 Low-carb Indian breakfast</span> |
+    <span class="sample" data-text="Find vegetarian dinner ideas">🥗 Vegetarian dinner</span> |
+    <span class="sample" data-text="Suggest desserts under 15 minutes">🍰 Quick desserts</span> |
+    <span class="sample" data-text="What can I cook with rice, eggs, and soy sauce">🍳 Fried rice ideas</span> |
+    <span class="sample" data-text="Find me a high-protein smoothie recipe">🥤 Protein smoothie</span>
+  </div>
+</div>
+
+<!-- ===== CHAT AREA ===== -->
+<div class="chat-container">
+  <div id="chatBox" class="chat-box">
+    <div class="message ai-msg">
+      <div class="bubble">👋 Hi! I’m your AI Chef. Ask me about recipes, ingredients, or cooking help!</div>
+    </div>
+  </div>
+
+  <div class="footer-input">
+    <input type="text" id="quickInput" placeholder="Type your message..." />
+    <button id="sendBtn">➤</button>
+  </div>
+</div>
+<script type="module">
+const API = "/api/recipe";
+const chatBox = document.getElementById("chatBox");
+const askBtn = document.getElementById("askBtn");
+const sendBtn = document.getElementById("sendBtn");
+const promptEl = document.getElementById("prompt");
+const quickInput = document.getElementById("quickInput");
+const sidebar = document.getElementById("sidebar");
+const menuBtn = document.getElementById("menuBtn");
+
+menuBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("active");
+});
+
+function addMessage(text, sender = "ai") {
+  const msg = document.createElement("div");
+  msg.className = `message ${sender}-msg`;
+  msg.innerHTML = `<div class="bubble">${text}</div>`;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function askAI(prompt) {
+  const filters = {
+    diet: document.getElementById("diet").value,
+    time: document.getElementById("time").value,
+    difficulty: document.getElementById("difficulty").value,
+  };
+
+  // Add user question
+  const userMsg = document.createElement("div");
+  userMsg.className = "message user-msg";
+  userMsg.innerHTML = `<div class="bubble">${prompt}</div>`;
+  chatBox.appendChild(userMsg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // Add AI "thinking..." bubble (specific to this question)
+  const aiMsg = document.createElement("div");
+  aiMsg.className = "message ai-msg";
+  aiMsg.innerHTML = `<div class="bubble">Thinking...</div>`;
+  chatBox.appendChild(aiMsg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, filters })
+    });
+
+    const data = await res.json();
+    const text = data.text || data.choices?.[0]?.message?.content || "No response from AI.";
+
+    // Update only THIS aiMsg
+    aiMsg.querySelector(".bubble").innerText = text;
+
+  } catch (err) {
+    aiMsg.querySelector(".bubble").innerText = "Error: " + err.message;
+  }
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+askBtn.addEventListener("click", () => {
+  const prompt = promptEl.value.trim();
+  if (prompt) askAI(prompt);
+});
+
+sendBtn.addEventListener("click", () => {
+  const prompt = quickInput.value.trim();
+  if (!prompt) return;
+  askAI(prompt);
+  quickInput.value = "";
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  chatBox.innerHTML = `<div class="message ai-msg"><div class="bubble">👋 Hi! I’m your AI Chef. Ask me about recipes, ingredients, or cooking help!</div></div>`;
+});
+
+document.getElementById("surpriseBtn").addEventListener("click", () => {
+  const ideas = [
+    "Surprise me with a random recipe!",
+    "Give me a simple pasta recipe for beginners",
+    "Find trending dessert recipes this week",
+    "Show high-protein vegetarian dinner ideas",
+    "Make something delicious using 5 ingredients only",
+    "Suggest an Indian street food recipe",
+  ];
+  const random = ideas[Math.floor(Math.random() * ideas.length)];
+  askAI(random);
+});
+
+document.querySelectorAll(".sample").forEach(s => {
+  s.addEventListener("click", () => {
+    promptEl.value = s.dataset.text;
+  });
+});
+
+// optional: auto-run demo query
+(async () => {
+  const response = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: "How to make butter chicken?" })
+  });
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let result = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    result += decoder.decode(value);
+    console.log(result);
+  }
+})();
+</script>
+
+</body>
+</html>

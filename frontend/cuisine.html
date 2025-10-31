@@ -119,7 +119,7 @@ body {
 }
 .navbar-nav .nav-link {
   color: rgb(0, 0, 0) !important;
-  font-size: 1rem;
+  font-size: 18px;
   transition: 0.3s;
 }
 .navbar-nav .nav-link:hover {
@@ -245,6 +245,169 @@ body {
     font-size: 12px;
   }
 }
+
+
+/* ===== Floating AI Icon ===== */
+#ai-icon {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.4s ease;
+  opacity: 0;
+  transform: scale(0.8);
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* When visible */
+#ai-icon.show {
+  opacity: 1;
+  transform: scale(1);
+  animation: pulse 3s infinite ease-in-out;  /* 👈 Gentle breathing effect */
+}
+
+/* Hover effect */
+#ai-icon:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Mobile size adjustment */
+@media (max-width: 600px) {
+  #ai-icon {
+    width: 60px;
+    height: 60px;
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+
+
+
+/* ===== Glowing White Headings ===== */
+.glowing-text {
+  color: #fff;
+  text-shadow: 0 0 10px #ffffffb3, 0 0 20px #ffffff80;
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 10px #ffffff80; }
+  to { text-shadow: 0 0 20px #fff, 0 0 30px #f8f9fa; }
+}
+
+/* ===== Section Layout Adjustments ===== */
+.about-content {
+  position: relative;
+  z-index: 2;
+  padding-left: 80px;
+  padding-right: 80px;
+}
+
+/* ===== Chef Side Images (moved to top corners) ===== */
+.chef-image {
+  position: absolute;
+  top: 30; /* fixed unit */
+  width: 200px;
+  height: auto;
+  opacity: 0.25;
+  z-index: 1;
+  filter: brightness(1.6);
+  animation: float 6s ease-in-out infinite;
+}
+
+.chef-image.left {
+  left: 0;
+}
+
+.chef-image.right {
+  right: 0;
+}
+
+/* ===== Smooth Floating Animation ===== */
+@keyframes float {
+  0% { transform: translateY(-20px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(-20px); }
+}
+/* --- Tablets (≤992px) --- */
+@media (max-width: 992px) {
+  .about-content {
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .chef-image {
+    width: 160px;
+    opacity: 0.3;
+  }
+}
+
+/* --- Mobile (≤768px) --- */
+@media (max-width: 768px) {
+  .about-content {
+    padding: 0 20px;
+    text-align: center;
+  }
+
+  .about-content .row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .chef-image {
+    width: 120px;
+    opacity: 0.25;
+    top: 10px;
+  }
+
+  .chef-image.left {
+    left: -10px;
+  }
+
+  .chef-image.right {
+    right: -10px;
+  }
+}
+
+/* --- Extra small screens (≤480px) --- */
+@media (max-width: 480px) {
+  .about-content {
+    padding: 0 15px;
+  }
+
+  .chef-image {
+    display: none; /* Hide on tiny screens */
+  }
+}
+
+
+
+/* ===== Fade-in Animation on Scroll ===== */
+.fade-in-on-scroll {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s ease-in-out;
+}
+.fade-in-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 </style>
 </head>
 <body>
@@ -252,7 +415,6 @@ body {
 <img src="/static/images/cusi.png" alt="Background" id="bg-image">
 
 
-<!-- 🔸 Modern Top Navbar -->
 <nav class="navbar navbar-expand-lg py-2">
   <div class="container-fluid px-4">
 
@@ -262,6 +424,11 @@ body {
   <span class="logo-text">CookingHub</span>
 </a>
 
+
+    <!-- Right side Logout Button -->
+    <div class="d-lg-none position-absolute end-0 me-3">
+      <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
+    </div>
     <!-- Desktop Navigation -->
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
       <ul class="navbar-nav align-items-center gap-lg-3">
@@ -270,23 +437,22 @@ body {
         <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/reviews">Reviews</a></li>
         <li class="nav-item"><a class="nav-link text-white fw-semibold" href="/profile">Profile</a></li>
         <li class="nav-item"><a class="nav-link text-white fw-semibold" href="#about-section">About</a></li>
+        <button class="logout-btn btn btn-light btn-sm fw-bold" style="color:#ff5722;">Logout</button>
     </div>
       </ul>
      <!-- 📱 Mobile Scrollable Links (replace existing mobile-nav) -->
 <div class="d-lg-none w-100 mt-2 mobile-nav-wrapper position-relative">
-
-
   <div class="mobile-nav mt-2 text-center">
     <div class="scrolling-nav d-flex gap-3 px-3" id="mobileScrollingNav">
-      <a href="/dashboard" class="mobile-link text-black fw-semibold text-decoration-none">Home</a>
-      <a href="/cuisine" class="mobile-link text-black fw-semibold text-decoration-none">Cuisine</a>
-      <a href="/reviews" class="mobile-link text-black fw-semibold text-decoration-none">Reviews</a>
-      <a href="/profile" class="mobile-link text-black fw-semibold text-decoration-none">Profile</a>
-      <a href="#about-section" class="mobile-link text-black fw-semibold text-decoration-none">About</a>
+      <a href="/dashboard" class="mobile-link text-black fw-semibold text-decoration-none">🏡Home</a>
+      <a href="/cuisine" class="mobile-link text-black fw-semibold text-decoration-none">🍽️Cuisine</a>
+      <a href="/reviews" class="mobile-link text-black fw-semibold text-decoration-none">🌟Reviews</a>
+      <a href="/profile" class="mobile-link text-black fw-semibold text-decoration-none">👤Profile</a>
+      <a href="#about-section" class="mobile-link text-black fw-semibold text-decoration-none">💡About</a>
     </div>
   </div>
-
 </div>
+
 </nav>
 
 <!-- Main Content -->
@@ -299,6 +465,71 @@ body {
   <div class="cuisine-grid" id="cuisine-grid"></div>
 </div>
 
+<!-- ===== ABOUT SECTION ===== -->
+<section id="about-section" class="container-fluid py-5 position-relative" style="background-color:black; overflow:hidden; color:white;">
+
+  <!-- Decorative Chef Images -->
+  <img src="static/images/boy.jpg" alt="Chef Left" class="chef-image left fade-in-on-scroll">
+  <img src="static/images/girl.jpg" alt="Chef Right" class="chef-image right fade-in-on-scroll">
+
+  <!-- About Content -->
+  <div class="container position-relative fade-in-on-scroll about-content">
+    <div class="row g-4 align-items-start">
+
+      <!-- Owner Profile -->
+      <div class="col-lg-4 text-center">
+        <img src="static/images/owner.jpg" alt="Owner" class="rounded-circle mb-3 shadow-lg"
+             style="width:150px; height:150px; object-fit:cover; border:3px solid #fff;">
+        <h4 class="fw-bold glowing-text">Gnaneswari Tirumanyam</h4>
+        <p class="mb-1"><i class="bi bi-envelope"></i> gnaneswari@example.com</p>
+        <p class="mb-1"><i class="bi bi-telephone"></i> +91 98765 43210</p>
+        <p class="mb-3"><i class="bi bi-geo-alt"></i> Tirupathi, India</p>
+
+        <div class="d-flex justify-content-center gap-4 fs-4">
+          <a class="text-white">🅾</a>
+          <a class="text-white"> ⓕ</a>
+          <a  class="text-white"> ▶️</a>
+        </div>
+      </div>
+
+      <!-- About Website -->
+      <div class="col-lg-4">
+        <h4 class="fw-bold mb-3 text-center text-lg-start glowing-text">🍴 About This Website</h4>
+        <p class="text-light">
+          Welcome to <strong>Cooking Hub</strong> — your all-in-one destination for discovering, sharing, 
+          and creating recipes that connect people through taste. From local delicacies to global cuisines, 
+          this platform celebrates the art of cooking in every form.
+        </p>
+        <p class="text-light">
+          Designed with simplicity, speed, and inspiration in mind — Cooking Hub helps you search, 
+          save, and explore recipes effortlessly. Every feature is built to make your cooking experience 
+          smarter and more joyful.
+        </p>
+      </div>
+
+      <!-- Motivation & Experience -->
+      <div class="col-lg-4">
+        <h4 class="fw-bold mb-3 text-center text-lg-start glowing-text">💡 Motivation & Experience</h4>
+        <p class="text-light">
+          Cooking has always been my creative escape — a way to combine passion, precision, and discovery. 
+          With each experiment, I learned how food tells stories and connects hearts.
+        </p>
+        <p class="text-light">
+          Through my experience in full-stack web development and UI design, I wanted to build 
+          something more than a recipe app — a culinary companion that inspires people to cook, 
+          learn, and share. Cooking Hub is that dream realized.
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-5 pt-4 border-top border-light">
+      <p class="text-secondary mb-0">
+        © 2025 <strong>Cooking Hub</strong> — Crafted with ❤️ by Gnaneswari Tirumanyam
+      </p>
+    </div>
+  </div>
+</section>
 <script>
 // ===== CUISINES =====
 const cuisines = ["African","American","Andhra","Arab","Asian","Assamese","Awadhi",
@@ -341,7 +572,46 @@ renderCuisines();
 searchInput.addEventListener("input", () => renderCuisines(searchInput.value));
 
 
+document.addEventListener("DOMContentLoaded", function() {
+  const fadeEls = document.querySelectorAll(".fade-in-on-scroll");
 
+  const appearOptions = {
+    threshold: 0.1, // start fading in when 10% visible
+  };
+
+  const appearOnScroll = new IntersectionObserver(function(entries) {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+      } else {
+        entry.target.classList.remove("visible"); // Remove when scrolled out
+      }
+    });
+  }, appearOptions);
+
+  fadeEls.forEach(el => appearOnScroll.observe(el));
+});
+</script>
+
+<!-- Floating AI Icon -->
+<img id="ai-icon" src="/static/images/ai.png" alt="AI Assistant">
+<script>
+// ===== Floating AI Icon Effect (always visible) =====
+const aiIcon = document.getElementById("ai-icon");
+
+// Make sure it's visible once the page loads
+window.addEventListener("load", () => {
+  aiIcon.classList.add("show");
+});
+
+// On click → go to /ai page
+aiIcon.addEventListener("click", () => {
+  aiIcon.style.transform = "scale(1.2)";
+  aiIcon.style.transition = "transform 0.3s ease";
+  setTimeout(() => {
+    window.location.href = "/ai";
+  }, 300); // smooth transition before redirect
+});
 </script>
 </body>
 </html>

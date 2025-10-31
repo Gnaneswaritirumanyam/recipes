@@ -178,6 +178,33 @@
   }
 }
 
+/* ===== Scrollable Review List ===== */
+#reviewList {
+  max-height: 400px;       /* limit height */
+  overflow-y: auto;        /* enable vertical scroll */
+  padding-right: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #ff9800 #f1f1f1;
+}
+
+/* Optional: prettier scrollbars for WebKit (Chrome, Edge) */
+#reviewList::-webkit-scrollbar {
+  width: 8px;
+}
+#reviewList::-webkit-scrollbar-thumb {
+  background-color: #ff9800;
+  border-radius: 4px;
+}
+#reviewList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#btnAll.active, #btnLatest.active {
+  background-color: #ff6700 !important;
+  color: white !important;
+  border-color: #ff6700 !important;
+}
+
 </style>
 </head>
 <body>
@@ -247,142 +274,154 @@
 </div>
 
 <script>
-const API_URL = "/api/reviews"; // must match backend
+const API_URL = "/api/reviews"; 
 let allReviews = [];
 let selectedRating = 0;
 const stars = document.querySelectorAll("#starRating i");
+const signedInEmail = localStorage.getItem("user_email") || ""; // Get email if user is logged in
 
-// Load reviews
+// ===== LOAD REVIEWS =====
 async function loadReviews() {
   try {
     const res = await fetch(API_URL);
     allReviews = await res.json();
     updateStats(allReviews);
     showLatest();
-  } catch(err) { console.error(err); }
+  } catch (err) {
+    console.error("Failed to load reviews:", err);
+  }
 }
 
-// Update bars & average
+// ===== UPDATE BARS & AVERAGE =====
 function updateStats(data) {
   const total = data.length;
-  if(!total) return;
+  if (!total) return;
 
-  const avg = (data.reduce((sum,r)=>sum+r.rating,0)/total).toFixed(1);
+  const avg = (data.reduce((sum, r) => sum + r.rating, 0) / total).toFixed(1);
   document.getElementById('avgRating').textContent = avg;
   renderStars(document.getElementById('avgStars'), Math.round(avg));
 
   const histogram = {1:0,2:0,3:0,4:0,5:0};
-  data.forEach(r=>histogram[r.rating]++);
-  for(let i=1;i<=5;i++){
-    const pct = (histogram[i]/total)*100;
-    document.getElementById('bar'+i).style.width = pct+'%';
-    document.getElementById('count'+i).textContent = histogram[i];
+  data.forEach(r => histogram[r.rating]++);
+  for (let i = 1; i <= 5; i++) {
+    const pct = (histogram[i] / total) * 100;
+    document.getElementById('bar' + i).style.width = pct + '%';
+    document.getElementById('count' + i).textContent = histogram[i];
   }
 }
 
-// Render stars
-function renderStars(container,rating){
-  container.innerHTML='';
-  for(let i=1;i<=5;i++){
-    container.innerHTML += `<i class="bi ${i<=rating?'bi-star-fill':'bi-star'}"></i>`;
+// ===== RENDER STARS =====
+function renderStars(container, rating) {
+  container.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    container.innerHTML += `<i class="bi ${i <= rating ? 'bi-star-fill' : 'bi-star'}"></i>`;
   }
 }
 
-// Display reviews
-function displayReviews(list){
+// ===== DISPLAY REVIEWS =====
+function displayReviews(list) {
   const container = document.getElementById('reviewList');
-  container.innerHTML='';
-  list.forEach(r=>{
+  container.innerHTML = '';
+  list.forEach(r => {
     const date = new Date(r.createdAt).toLocaleString();
-    container.innerHTML+=`
+    container.innerHTML += `
       <div class="review-item">
         <strong>${r.name}</strong> <small class="text-muted">${date}</small><br>
-        ${'⭐'.repeat(r.rating)} 
+        ${'⭐'.repeat(r.rating)}
         <p>${r.review}</p>
       </div>`;
   });
 }
+// ===== FILTER: LATEST & ALL =====
+function showLatest() {
+  // Sort by createdAt descending (newest first)
+  const sorted = [...allReviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  displayReviews(sorted.slice(0, 5));
 
-// Latest & All
-function showLatest(){ displayReviews(allReviews.slice(0,5)); }
-function showAll(){ displayReviews(allReviews); }
+  // Highlight active button
+  document.getElementById('btnLatest').classList.add('active');
+  document.getElementById('btnAll').classList.remove('active');
+}
 
-// Star selection
-stars.forEach(star=>{
-  star.addEventListener('click',()=>{
+function showAll() {
+  // Show all reviews (sorted by date descending for consistency)
+  const sorted = [...allReviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  displayReviews(sorted);
+
+  // Highlight active button
+  document.getElementById('btnAll').classList.add('active');
+  document.getElementById('btnLatest').classList.remove('active');
+}
+
+// Attach event listeners
+document.getElementById('btnLatest').addEventListener('click', showLatest);
+document.getElementById('btnAll').addEventListener('click', showAll);
+
+
+// ===== STAR SELECTION =====
+stars.forEach(star => {
+  star.addEventListener('click', () => {
     selectedRating = parseInt(star.dataset.value);
-    stars.forEach(s=>{
-      s.classList.remove("bi-star-fill","bi-star");
-      s.classList.add(parseInt(s.dataset.value)<=selectedRating?"bi-star-fill":"bi-star");
+    stars.forEach(s => {
+      s.classList.remove("bi-star-fill", "bi-star");
+      s.classList.add(parseInt(s.dataset.value) <= selectedRating ? "bi-star-fill" : "bi-star");
     });
   });
 });
 
-// Submit review
-document.getElementById('submitBtn').onclick = async ()=>{
+// ===== SUBMIT REVIEW =====
+document.getElementById('submitBtn').addEventListener('click', async () => {
   const name = document.getElementById('name').value.trim();
   const email = document.getElementById('email').value.trim();
   const review = document.getElementById('review').value.trim();
 
-  if(!name||!email||!selectedRating||!review){ alert("Please fill all fields!"); return; }
+  if (!name || !selectedRating || !review) {
+    alert("Please fill all fields and choose a rating!");
+    return;
+  }
 
-  try{
-    const res = await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({name,email,rating:selectedRating,review})
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, rating: selectedRating, review })
     });
-    if(!res.ok) throw new Error("Failed to submit review");
+
+    if (!res.ok) throw new Error("Failed to submit review");
     const data = await res.json();
 
     allReviews.unshift({
       _id: data.id,
-      name,email,rating:selectedRating,review,
+      name, email, rating: selectedRating, review,
       createdAt: new Date().toISOString()
     });
 
     updateStats(allReviews);
     showLatest();
 
-    document.getElementById('successMsg').hidden=false;
-    setTimeout(()=>document.getElementById('successMsg').hidden=true,3000);
+    const successMsg = document.getElementById('successMsg');
+    successMsg.hidden = false;
+    setTimeout(() => successMsg.hidden = true, 3000);
 
-    // Clear form
-    document.getElementById('name').value='';
-    document.getElementById('email').value='';
-    document.getElementById('review').value='';
-    selectedRating=0;
-    stars.forEach(s=>{ s.classList.remove("bi-star-fill"); s.classList.add("bi-star"); });
+    // Reset form
+    document.getElementById('name').value = '';
+    document.getElementById('email').value = signedInEmail;
+    document.getElementById('review').value = '';
+    selectedRating = 0;
+    stars.forEach(s => {
+      s.classList.remove("bi-star-fill");
+      s.classList.add("bi-star");
+    });
 
-  }catch(err){ console.error(err); alert("Error submitting review"); }
-};
+  } catch (err) {
+    console.error(err);
+    alert("Error submitting review. Try again later.");
+  }
+});
 
-// Init
-document.getElementById('btnLatest').onclick=showLatest;
-document.getElementById('btnAll').onclick=showAll;
+// ===== INIT =====
 loadReviews();
-let signedInEmail = ""; // get this from your authentication system
-
-// Example: after login
-signedInEmail = user.email; // populate this when user signs in
-
-document.getElementById('submitBtn').onclick = async ()=> {
-  if(!signedInEmail){
-    alert("Please sign in with your registered email to submit a review.");
-    return;
-  }
-  
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-
-  if(email !== signedInEmail){
-    alert("You can only submit reviews with your signed-up email.");
-    return;
-  }
-
-  // ...rest of your existing submit logic
-};
-
 </script>
+
 </body>
 </html>

@@ -16,6 +16,7 @@ import requests
 from sqlalchemy import Column, Integer, String, DateTime, JSON
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
+from google import genai
 Base = declarative_base()
 
 load_dotenv()
@@ -50,8 +51,70 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+API_KEY = os.getenv("PERPLEXITY_API_KEY")
+MODEL = os.getenv("PERPLEXITY_MODEL", "sonar-medium-chat")  # or sonar, sonar-reasoning etc.
 
+SYSTEM_PROMPT = (
+    "You are CookingHub AI, an expert chef and nutrition assistant. "
+    "Always answer as a helpful recipe assistant focusing strictly on food, recipes, ingredients, "
+    "cooking techniques, substitutions, diet variants, time/difficulty filters, and troubleshooting. "
+    "When the user asks for recipes, return clear titles, ingredient lists, step-by-step instructions, "
+    "approximate timings, difficulty level, dietary labels (e.g., vegan, keto, gluten-free) when possible, "
+    "Format answers in clean readable sections without Markdown symbols like **, ##, or ###."
+    "and optionally suggest variations. Do not answer non-food unrelated requests — instead respond: "
+    "\"I can only help with food and cooking questions. Please ask about recipes, ingredients, or cooking.\""
+)
 
+def clean_markdown(text: str) -> str:
+    # Remove markdown symbols but keep structure
+    text = re.sub(r'[*_`#>]+', '', text)   # remove **, ##, ###, etc.
+    text = re.sub(r'\n{3,}', '\n\n', text) # normalize spacing
+    return text.strip()
+
+@app.post("/api/recipe")
+async def ask_perplexity(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt", "").strip()
+
+    if not API_KEY:
+        return JSONResponse({"error": "Missing Perplexity API key"}, status_code=400)
+
+    try:
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+        }
+
+        res = requests.post(
+            "https://api.perplexity.ai/chat/completions",
+            headers={
+                "Authorization": f"Bearer {API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+
+        if res.status_code != 200:
+            return JSONResponse(
+                {
+                    "error": f"Perplexity API returned {res.status_code}",
+                    "details": res.text,
+                },
+                status_code=res.status_code,
+            )
+        data = res.json()
+        text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        
+        # ✅ Clean markdown formatting
+        clean_text = clean_markdown(text)
+
+        return {"text": text or "No response from AI."}
+        
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 class History(Base):
     __tablename__ = "history"
@@ -118,6 +181,13 @@ async def cuisine_page():
 async def items_page(request: Request, cuisine: str):
     return templates.TemplateResponse("items.html", {"request": request, "cuisine": cuisine})
 
+
+@app.get("/ai", response_class=FileResponse)
+async def open_ai_page():
+    path = os.path.join(STATIC_DIR, "aichat.html")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="aichat.html not found")
+    return FileResponse(path)
 # ---------------- MODELS ----------------
 class SignupModel(BaseModel):
     name: str
@@ -280,6 +350,30 @@ all_ingredients_list = list(all_ingredients_set)
 def correct_ingredient(user_ing):
     match, score, _ = process.extractOne(user_ing.lower(), all_ingredients_list, scorer=fuzz.WRatio)
     return match
+
+
+# ---------- Language Detection Helper ----------
+def is_non_english(text: str) -> bool:
+    """Detect Indian-language text using Unicode ranges."""
+    if not text:
+        return False
+    return bool(re.search(r"[\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0D80-\u0DFF]", text))
+
+def recipe_is_english(recipe: dict) -> bool:
+    """Return True if recipe title, ingredients, and instructions are all English."""
+    if is_non_english(recipe.get("TranslatedRecipeName", "")):
+        return False
+
+    for ing in recipe.get("TranslatedIngredients", []):
+        if is_non_english(ing):
+            return False
+
+    for step in recipe.get("TranslatedInstructions", []):
+        if is_non_english(step):
+            return False
+
+    return True
+
 # ---------------- SUGGEST RECIPES ----------------
 @app.post("/suggest_recipes")
 def get_recipe_suggestions(data: IngredientsInput):
@@ -287,7 +381,8 @@ def get_recipe_suggestions(data: IngredientsInput):
         return {"message": "Please provide at least one ingredient."}
 
     corrected_ings = [correct_ingredient(ing) for ing in data.ingredients]
-      # ✅ Save search history (keep only latest 10)
+
+    # ✅ Keep latest 10 searches
     search_history.append({
         "ingredients": corrected_ings,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -304,15 +399,18 @@ def get_recipe_suggestions(data: IngredientsInput):
 
         r = recipe_info_map[recipe]
 
-        # Get image filename from JSON path
+        # 🛑 Skip if recipe contains Hindi/Indian text
+        if not recipe_is_english(r):
+            continue
+
+        # Check image path
         img_path = r.get("image_path", "")
         if not img_path:
-            continue  # skip recipes without image
+            continue
         img_filename = os.path.basename(img_path).replace("\\", "/")
         full_img_path = os.path.join(STATIC_DIR, "recipes_images", img_filename)
         if not os.path.isfile(full_img_path):
-            print(f"Image not found for recipe {recipe}: {full_img_path}")
-            continue  # skip recipes with missing image file
+            continue
 
         recipe_scores.append((recipe, matched, img_filename))
 
@@ -333,7 +431,7 @@ def get_recipe_suggestions(data: IngredientsInput):
         })
 
     if not results:
-        return {"message": "No recipes found."}
+        return {"message": "No English recipes found for these ingredients."}
 
     return {"user_input": data.ingredients, "suggested_recipes": results}
 
@@ -341,10 +439,8 @@ def get_recipe_suggestions(data: IngredientsInput):
 # ---------------- GET RECIPE DETAILS ----------------
 @app.get("/get_recipe")
 def get_recipe(name: str):
-    # Normalize the input (handle case, spaces, encoding)
     normalized_name = name.strip().lower().replace("%20", " ")
 
-    # Find matching recipe (case-insensitive)
     matched_recipe = None
     for key in recipe_info_map.keys():
         if key.strip().lower() == normalized_name:
@@ -353,14 +449,19 @@ def get_recipe(name: str):
 
     if not matched_recipe:
         raise HTTPException(status_code=404, detail=f"Recipe '{name}' not found")
-    
-    # ✅ Save viewed recipe to history
+
+    # 🛑 Skip non-English recipes
+    if not recipe_is_english(matched_recipe):
+        raise HTTPException(status_code=400, detail="Recipe not available in English")
+
+    # ✅ Save viewed recipe
     view_history.append({
         "recipe_name": matched_recipe.get("TranslatedRecipeName", name),
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
     if len(view_history) > 10:
         view_history.pop(0)
+
     img_path = matched_recipe.get("image_path", "default.jpg")
     img_filename = os.path.basename(img_path).replace("\\", "/")
 
