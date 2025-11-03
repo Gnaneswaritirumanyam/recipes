@@ -19,9 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://recipes-mongo:27017")
-DB_NAME = os.getenv("DB_NAME", "myapp")
-
+MONGO_URI = os.getenv("MONGO_URI")
 RECAPTCHA_SECRET = os.getenv("RECAPTCHA_SECRET_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
@@ -29,8 +27,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 720))
 ALGORITHM = "HS256"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PARENT_DIR = os.path.dirname(BASE_DIR)
-STATIC_DIR = os.getenv("STATIC_DIR", os.path.join(PARENT_DIR, "frontend"))
+FRONTEND_DIR = os.path.join(BASE_DIR, "../frontend")
+
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
@@ -38,10 +36,10 @@ MAX_BCRYPT_LEN = 72
 origins = os.getenv("FRONTEND_ORIGINS","http://127.0.0.1:8000" ).split(",")
 
 client = MongoClient(MONGO_URI)
-auth_db = client[DB_NAME]
-
+auth_db = client["myapp"]
 users_col = auth_db["users"]
-history_col = auth_db["History"]
+history_col=auth_db["History"]
+
 
 app = FastAPI(title="Recipe Suggestion + Auth API")
 
@@ -54,6 +52,8 @@ app.add_middleware(
 )
 API_KEY = os.getenv("PERPLEXITY_API_KEY")
 MODEL = os.getenv("PERPLEXITY_MODEL", "sonar-medium-chat")  # or sonar, sonar-reasoning etc.
+# ✅ Mount static files
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 SYSTEM_PROMPT = (
     "You are CookingHub AI, an expert chef and nutrition assistant. "
@@ -142,12 +142,12 @@ def verify_token(token: str):
     except JWTError:
         return None  
     
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 # ---------------- HTML ROUTES ----------------
 @app.get("/", response_class=HTMLResponse)
 async def signup_page():
-    path = os.path.join(STATIC_DIR, "index.html")
+    path = os.path.join(FRONTEND_DIR, "index.html")
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Signup page not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -155,7 +155,7 @@ async def signup_page():
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
-    path = os.path.join(STATIC_DIR, "login.html")
+    path = os.path.join(FRONTEND_DIR, "login.html")
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Login page not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -163,7 +163,7 @@ async def login_page():
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page():
-    path = os.path.join(STATIC_DIR, "dashboard.html")
+    path = os.path.join(FRONTEND_DIR, "dashboard.html")
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Dashboard not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -171,7 +171,7 @@ async def dashboard_page():
     
 @app.get("/cuisine", response_class=HTMLResponse)
 async def cuisine_page():
-    path = os.path.join(STATIC_DIR,"cuisine.html")
+    path = os.path.join(FRONTEND_DIR,"cuisine.html")
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Cuisine not found")
     with open(path, "r", encoding="utf-8") as f:
@@ -185,7 +185,7 @@ async def items_page(request: Request, cuisine: str):
 
 @app.get("/ai", response_class=FileResponse)
 async def open_ai_page():
-    path = os.path.join(STATIC_DIR, "aichat.html")
+    path = os.path.join(FRONTEND_DIR, "aichat.html")
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="aichat.html not found")
     return FileResponse(path)
@@ -319,7 +319,7 @@ async def api_dashboard(request: Request):
     return {"message": f"Welcome, {user.get('name', email)}!", "user": user}
 
 # ---------------- LOAD RECIPE DATA ----------------
-RECIPES_FILE = os.path.join(STATIC_DIR, "final_data_updated.recipes.json")
+RECIPES_FILE = os.path.join(FRONTEND_DIR, "final_data_updated.recipes.json")
 if not os.path.exists(RECIPES_FILE):
     raise FileNotFoundError(f"{RECIPES_FILE} not found")
 
@@ -409,7 +409,7 @@ def get_recipe_suggestions(data: IngredientsInput):
         if not img_path:
             continue
         img_filename = os.path.basename(img_path).replace("\\", "/")
-        full_img_path = os.path.join(STATIC_DIR, "recipes_images", img_filename)
+        full_img_path = os.path.join(FRONTEND_DIR, "recipes_images", img_filename)
         if not os.path.isfile(full_img_path):
             continue
 
@@ -501,7 +501,7 @@ async def reviews_page():
     """
     Serves the main reviews UI (reviews.html)
     """
-    path = os.path.join(STATIC_DIR, "reviews.html")
+    path = os.path.join(FRONTEND_DIR, "reviews.html")
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="reviews.html not found")
     return FileResponse(path)
@@ -543,7 +543,7 @@ class UserData(BaseModel):
 # ---------------- PROFILE PAGE ----------------
 @app.get("/profile", response_class=HTMLResponse)
 async def profile_page():
-    path = os.path.join(STATIC_DIR, "profile.html")
+    path = os.path.join(FRONTEND_DIR, "profile.html")
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="profile.html not found")
     return FileResponse(path)
@@ -591,7 +591,7 @@ async def upload_profile_pic(request: Request, file: UploadFile = File(...)):
 
     email = payload.get("sub")
 
-    upload_dir = os.path.join(STATIC_DIR, "uploads")
+    upload_dir = os.path.join(FRONTEND_DIR, "uploads")
     os.makedirs(upload_dir, exist_ok=True)
     file_path = os.path.join(upload_dir, f"{email}_{file.filename}")
 

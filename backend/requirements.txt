@@ -1,12 +1,27 @@
+# ---- Core FastAPI and server ----
 fastapi
 uvicorn[standard]
-pymongo
-requests
-python-dotenv
-passlib[bcrypt]
-python-jose
-rapidfuzz
-networkx
-sqlalchemy
-jinja2
-pydantic[email]
+
+# ---- Database ----
+pymongo              # For MongoDB Atlas
+sqlalchemy           # Optional (you have SQLAlchemy imports)
+python-dotenv        # For environment variables
+
+# ---- Security and Authentication ----
+passlib[bcrypt]      # For password hashing
+python-jose          # For JWT encoding/decoding
+
+# ---- File Uploads ----
+python-multipart     # For handling Form and UploadFile
+
+# ---- Utilities ----
+requests             # For making external API calls
+jinja2               # For HTML template rendering
+rapidfuzz            # For fuzzy search (ingredient/recommendation logic)
+networkx             # For recipe graph or similarity network
+
+# ---- Optional: If you ever use JSON-based Pydantic validations ----
+pydantic[email]      
+
+# ---- (Optional but recommended) ----
+bcrypt==3.1.4
