@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pymongo
+requests
+python-dotenv
+passlib[bcrypt]
+python-jose
+rapidfuzz
+networkx
+sqlalchemy
+jinja2
+pydantic[email]

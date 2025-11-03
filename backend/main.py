@@ -16,11 +16,12 @@ import requests
 from sqlalchemy import Column, Integer, String, DateTime, JSON
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
-from google import genai
 Base = declarative_base()
 
 load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://recipes-mongo:27017")
+DB_NAME = os.getenv("DB_NAME", "myapp")
+
 RECAPTCHA_SECRET = os.getenv("RECAPTCHA_SECRET_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
@@ -37,10 +38,10 @@ MAX_BCRYPT_LEN = 72
 origins = os.getenv("FRONTEND_ORIGINS","http://127.0.0.1:8000" ).split(",")
 
 client = MongoClient(MONGO_URI)
-auth_db = client["myapp"]
-users_col = auth_db["users"]
-history_col=auth_db["History"]
+auth_db = client[DB_NAME]
 
+users_col = auth_db["users"]
+history_col = auth_db["History"]
 
 app = FastAPI(title="Recipe Suggestion + Auth API")
 
